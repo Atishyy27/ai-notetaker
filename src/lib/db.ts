@@ -8,18 +8,46 @@ import type {
   SummaryTopic,
 } from "./types";
 
-// Minimal persistence: one JSON file under /data. Zero-setup and reliable for a
-// single-user demo. The whole storage layer lives behind this module, so moving
-// to Postgres later changes only this file, not the routes.
+// Minimal persistence: one JSON file. Zero-setup and reliable for a single
+// instance. The whole storage layer lives behind this module, so moving to
+// Postgres later changes only this file, not the routes.
+//
+// Two correctness properties this file guarantees, because a plain
+// read-modify-writeFile has neither:
+//   1. No lost updates. Every operation runs inside a serialised critical
+//      section (`withLock`), so two concurrent requests can never read the same
+//      snapshot and clobber each other's change.
+//   2. No torn/corrupt file. Writes go to a temp file and are atomically
+//      renamed into place, so a crash mid-write leaves the previous good file
+//      intact, never a half-written one. Lock-free readers see old-or-new, never
+//      partial.
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const DATA_FILE = path.join(DATA_DIR, "sessions.json");
+// Resolved per call so the data location can be overridden (tests, deploys)
+// via env without reloading the module.
+function dataFile(): string {
+  return (
+    process.env.AINOTE_DATA_FILE ??
+    path.join(process.cwd(), "data", "sessions.json")
+  );
+}
 
 type Store = { sessions: SessionDTO[] };
 
+// Promise-chain mutex. Each op is appended to the chain and runs only after the
+// previous one settles, regardless of whether it resolved or rejected.
+let chain: Promise<unknown> = Promise.resolve();
+function withLock<T>(fn: () => Promise<T>): Promise<T> {
+  const run = chain.then(fn, fn);
+  chain = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
+}
+
 async function read(): Promise<Store> {
   try {
-    const raw = await fs.readFile(DATA_FILE, "utf8");
+    const raw = await fs.readFile(dataFile(), "utf8");
     const parsed = JSON.parse(raw) as Store;
     return { sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [] };
   } catch {
@@ -28,8 +56,11 @@ async function read(): Promise<Store> {
 }
 
 async function write(store: Store): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  await fs.writeFile(DATA_FILE, JSON.stringify(store, null, 2), "utf8");
+  const file = dataFile();
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  const tmp = `${file}.${randomUUID()}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify(store, null, 2), "utf8");
+  await fs.rename(tmp, file);
 }
 
 export type NewActionItem = {
@@ -39,114 +70,128 @@ export type NewActionItem = {
   priority: string;
 };
 
-export async function createSession(input: {
+export function createSession(input: {
   title: string;
   transcript: string;
   summary: SummaryTopic[];
   durationSec: number | null;
   actionItems: NewActionItem[];
 }): Promise<SessionDTO> {
-  const store = await read();
-  const session: SessionDTO = {
-    id: randomUUID(),
-    title: input.title,
-    createdAt: new Date().toISOString(),
-    transcript: input.transcript,
-    durationSec: input.durationSec,
-    summary: input.summary,
-    actionItems: input.actionItems.map((a) => ({
+  return withLock(async () => {
+    const store = await read();
+    const session: SessionDTO = {
       id: randomUUID(),
-      task: a.task,
-      assignee: a.assignee,
-      dueDate: a.dueDate,
-      priority: a.priority,
-      done: false,
-    })),
-  };
-  store.sessions.unshift(session);
-  await write(store);
-  return session;
+      title: input.title,
+      createdAt: new Date().toISOString(),
+      transcript: input.transcript,
+      durationSec: input.durationSec,
+      summary: input.summary,
+      actionItems: input.actionItems.map((a) => ({
+        id: randomUUID(),
+        task: a.task,
+        assignee: a.assignee,
+        dueDate: a.dueDate,
+        priority: a.priority,
+        done: false,
+      })),
+    };
+    store.sessions.unshift(session);
+    await write(store);
+    return session;
+  });
 }
 
-export async function listSessions(): Promise<SessionListItem[]> {
-  const store = await read();
-  return store.sessions
-    .slice()
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .map((s) => ({
-      id: s.id,
-      title: s.title,
-      createdAt: s.createdAt,
-      durationSec: s.durationSec,
-      actionItemCount: s.actionItems.length,
-    }));
+export function listSessions(): Promise<SessionListItem[]> {
+  return withLock(async () => {
+    const store = await read();
+    return store.sessions
+      .slice()
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((s) => ({
+        id: s.id,
+        title: s.title,
+        createdAt: s.createdAt,
+        durationSec: s.durationSec,
+        actionItemCount: s.actionItems.length,
+      }));
+  });
 }
 
-export async function getSession(id: string): Promise<SessionDTO | null> {
-  const store = await read();
-  return store.sessions.find((s) => s.id === id) ?? null;
+export function getSession(id: string): Promise<SessionDTO | null> {
+  return withLock(async () => {
+    const store = await read();
+    return store.sessions.find((s) => s.id === id) ?? null;
+  });
 }
 
-export async function deleteSession(id: string): Promise<boolean> {
-  const store = await read();
-  const before = store.sessions.length;
-  store.sessions = store.sessions.filter((s) => s.id !== id);
-  if (store.sessions.length === before) return false;
-  await write(store);
-  return true;
+export function deleteSession(id: string): Promise<boolean> {
+  return withLock(async () => {
+    const store = await read();
+    const before = store.sessions.length;
+    store.sessions = store.sessions.filter((s) => s.id !== id);
+    if (store.sessions.length === before) return false;
+    await write(store);
+    return true;
+  });
 }
 
-export async function addActionItem(
+export function addActionItem(
   sessionId: string,
   item: NewActionItem,
 ): Promise<ActionItemDTO | null> {
-  const store = await read();
-  const session = store.sessions.find((s) => s.id === sessionId);
-  if (!session) return null;
-  const created: ActionItemDTO = {
-    id: randomUUID(),
-    task: item.task,
-    assignee: item.assignee,
-    dueDate: item.dueDate,
-    priority: item.priority,
-    done: false,
-  };
-  session.actionItems.push(created);
-  await write(store);
-  return created;
+  return withLock(async () => {
+    const store = await read();
+    const session = store.sessions.find((s) => s.id === sessionId);
+    if (!session) return null;
+    const created: ActionItemDTO = {
+      id: randomUUID(),
+      task: item.task,
+      assignee: item.assignee,
+      dueDate: item.dueDate,
+      priority: item.priority,
+      done: false,
+    };
+    session.actionItems.push(created);
+    await write(store);
+    return created;
+  });
 }
 
-export async function updateActionItem(
+export function updateActionItem(
   id: string,
   patch: Partial<
     Pick<ActionItemDTO, "task" | "assignee" | "dueDate" | "priority" | "done">
   >,
 ): Promise<ActionItemDTO | null> {
-  const store = await read();
-  for (const s of store.sessions) {
-    const item = s.actionItems.find((a) => a.id === id);
-    if (item) {
-      if (patch.task !== undefined) item.task = patch.task;
-      if (patch.assignee !== undefined) item.assignee = patch.assignee;
-      if (patch.dueDate !== undefined) item.dueDate = patch.dueDate;
-      if (patch.priority !== undefined) item.priority = patch.priority;
-      if (patch.done !== undefined) item.done = patch.done;
-      await write(store);
-      return item;
+  return withLock(async () => {
+    const store = await read();
+    for (const s of store.sessions) {
+      const item = s.actionItems.find((a) => a.id === id);
+      if (item) {
+        if (patch.task !== undefined) item.task = patch.task;
+        if (patch.assignee !== undefined) item.assignee = patch.assignee;
+        if (patch.dueDate !== undefined) item.dueDate = patch.dueDate;
+        if (patch.priority !== undefined) item.priority = patch.priority;
+        if (patch.done !== undefined) item.done = patch.done;
+        await write(store);
+        return item;
+      }
     }
-  }
-  return null;
+    return null;
+  });
 }
 
-export async function deleteActionItem(id: string): Promise<boolean> {
-  const store = await read();
-  for (const s of store.sessions) {
-    const idx = s.actionItems.findIndex((a) => a.id === id);
-    if (idx !== -1) {
-      s.actionItems.splice(idx, 1);
-      await write(store);
-      return true;
+export function deleteActionItem(id: string): Promise<boolean> {
+  return withLock(async () => {
+    const store = await read();
+    for (const s of store.sessions) {
+      const idx = s.actionItems.findIndex((a) => a.id === id);
+      if (idx !== -1) {
+        s.actionItems.splice(idx, 1);
+        await write(store);
+        return true;
+      }
     }
-  }
-  return false;
+    return false;
+  });
 }
