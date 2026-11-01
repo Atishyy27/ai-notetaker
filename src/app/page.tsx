@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import AudioUpload from "@/components/AudioUpload";
 import Dashboard from "@/components/Dashboard";
+import KeySettings from "@/components/KeySettings";
 import ProcessingView from "@/components/ProcessingView";
 import Recorder from "@/components/Recorder";
 import StatusBadge from "@/components/StatusBadge";
@@ -22,6 +23,7 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState<Source | null>(null);
   const [loadingSample, setLoadingSample] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const processing = PROCESSING.includes(state);
 
@@ -82,6 +84,13 @@ export default function HomePage() {
           <Link href="/sessions" className="text-sm text-slate-600 hover:text-slate-900">
             History
           </Link>
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            className="text-sm text-slate-600 hover:text-slate-900"
+          >
+            Keys
+          </button>
           {state !== "idle" && !processing && (
             <button
               type="button"
@@ -174,6 +183,12 @@ export default function HomePage() {
           </div>
         </div>
       )}
+
+      <KeySettings
+        key={settingsOpen ? "open" : "closed"}
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+      />
     </main>
   );
 }

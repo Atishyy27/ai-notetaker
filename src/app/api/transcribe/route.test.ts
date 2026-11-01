@@ -64,6 +64,22 @@ describe("POST /api/transcribe provider path", () => {
     expect(json.text).toBe("hello team");
   });
 
+  it("passes bring-your-own keys from the x-groq-key header", async () => {
+    mocked.mockResolvedValue({ text: "hi", durationSec: 1 });
+    const form = new FormData();
+    form.set("audio", new File(["x"], "clip.webm", { type: "audio/webm" }));
+    const req = new Request("http://localhost/api/transcribe", {
+      method: "POST",
+      body: form,
+      headers: { "x-groq-key": "k1, k2" },
+    });
+    await POST(req);
+    expect(mocked).toHaveBeenCalledWith(
+      expect.any(Uint8Array),
+      expect.objectContaining({ keys: ["k1", "k2"] }),
+    );
+  });
+
   it("maps a provider rate-limit error to 429", async () => {
     mocked.mockRejectedValue(new Error("rate limit exceeded"));
     const form = new FormData();

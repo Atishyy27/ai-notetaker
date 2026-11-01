@@ -1,5 +1,6 @@
 import { transcribeAudio } from "@/lib/ai";
 import { mapAiError } from "@/lib/http";
+import { parseKeys } from "@/lib/failover";
 
 // Transcription can take a while for longer clips.
 export const maxDuration = 60;
@@ -42,10 +43,11 @@ export async function POST(req: Request) {
   }
 
   const language = (form.get("language") as string | null) || undefined;
+  const keys = parseKeys(req.headers.get("x-groq-key"));
 
   try {
     const bytes = new Uint8Array(await file.arrayBuffer());
-    const result = await transcribeAudio(bytes, { language });
+    const result = await transcribeAudio(bytes, { language, keys });
     if (!result.text.trim()) {
       return Response.json(
         { error: "No speech was detected in the audio." },

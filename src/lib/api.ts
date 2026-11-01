@@ -4,6 +4,7 @@ import type {
   ActionItemDTO,
   Priority,
 } from "./types";
+import { keyHeader } from "./keys";
 
 // Client-side fetch helpers. Each throws an Error carrying the server's message
 // so the UI can show the specific failure (rate limit, bad audio, etc.).
@@ -31,7 +32,11 @@ export async function transcribeAudio(
   form.append("audio", file, name);
   if (language) form.append("language", language);
 
-  const res = await fetch("/api/transcribe", { method: "POST", body: form });
+  const res = await fetch("/api/transcribe", {
+    method: "POST",
+    body: form,
+    headers: { "x-groq-key": keyHeader("groq") },
+  });
   return jsonOrThrow(res);
 }
 
@@ -42,7 +47,10 @@ export async function analyzeTranscript(input: {
 }): Promise<SessionDTO> {
   const res = await fetch("/api/analyze", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "x-google-key": keyHeader("google"),
+    },
     body: JSON.stringify(input),
   });
   return jsonOrThrow(res);

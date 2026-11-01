@@ -1,6 +1,7 @@
 import { analyzeTranscript } from "@/lib/ai";
 import { createSession } from "@/lib/db";
 import { mapAiError } from "@/lib/http";
+import { parseKeys } from "@/lib/failover";
 
 export const maxDuration = 60;
 
@@ -29,9 +30,11 @@ export async function POST(req: Request) {
   const durationSec =
     typeof body.durationSec === "number" ? Math.round(body.durationSec) : null;
 
+  const keys = parseKeys(req.headers.get("x-google-key"));
+
   let analysis;
   try {
-    analysis = await analyzeTranscript(transcript);
+    analysis = await analyzeTranscript(transcript, { keys });
   } catch (err) {
     return mapAiError(err);
   }
