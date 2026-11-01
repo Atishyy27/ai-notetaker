@@ -1,4 +1,4 @@
-# AI Notetaker
+# Baithak · बैठक
 
 Record or upload a conversation, get back a reliable transcript, an executive summary grouped by topic, and a structured, editable list of action items. Sessions are saved and can be revisited.
 
