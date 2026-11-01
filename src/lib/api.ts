@@ -48,6 +48,10 @@ export async function analyzeTranscript(input: {
   return jsonOrThrow(res);
 }
 
+export async function loadSample(): Promise<SessionDTO> {
+  return jsonOrThrow(await fetch("/api/sample", { method: "POST" }));
+}
+
 export async function listSessions(): Promise<SessionListItem[]> {
   return jsonOrThrow(await fetch("/api/sessions"));
 }

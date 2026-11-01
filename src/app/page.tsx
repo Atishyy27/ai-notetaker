@@ -7,7 +7,7 @@ import Dashboard from "@/components/Dashboard";
 import ProcessingView from "@/components/ProcessingView";
 import Recorder from "@/components/Recorder";
 import StatusBadge from "@/components/StatusBadge";
-import { analyzeTranscript, transcribeAudio } from "@/lib/api";
+import { analyzeTranscript, loadSample, transcribeAudio } from "@/lib/api";
 import type { CaptureState, SessionDTO } from "@/lib/types";
 
 type Mode = "record" | "upload";
@@ -21,8 +21,24 @@ export default function HomePage() {
   const [session, setSession] = useState<SessionDTO | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState<Source | null>(null);
+  const [loadingSample, setLoadingSample] = useState(false);
 
   const processing = PROCESSING.includes(state);
+
+  async function openSample() {
+    setError(null);
+    setLoadingSample(true);
+    try {
+      const result = await loadSample();
+      setSession(result);
+      setState("completed");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not load the sample.");
+      setState("error");
+    } finally {
+      setLoadingSample(false);
+    }
+  }
 
   async function process(src: Source) {
     setSource(src);
@@ -139,6 +155,20 @@ export default function HomePage() {
           ) : (
             <AudioUpload onSelect={(file) => void process({ blob: file, durationSec: null })} />
           )}
+
+          <div className="mt-6 border-t border-slate-200 pt-4 text-center">
+            <button
+              type="button"
+              onClick={() => void openSample()}
+              disabled={loadingSample || state === "recording" || state === "paused"}
+              className="text-sm font-medium text-slate-600 underline underline-offset-4 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loadingSample ? "Loading sample..." : "Or explore a sample session"}
+            </button>
+            <p className="mt-1 text-xs text-slate-400">
+              Pre-filled example data. No API key needed.
+            </p>
+          </div>
         </div>
       )}
     </main>
