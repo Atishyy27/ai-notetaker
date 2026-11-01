@@ -128,8 +128,11 @@ export default function HomePage() {
       ) : (
         <div className="mx-auto max-w-xl">
           <h1 className="mb-1 text-2xl font-semibold text-slate-900">New session</h1>
-          <p className="mb-6 text-sm text-slate-500">
+          <p className="mb-1 text-sm text-slate-500">
             Record a meeting or upload audio to get a transcript, summary and action items.
+          </p>
+          <p className="mb-6 text-xs text-slate-400">
+            Free tier: up to 25 MB per clip (~1-2 hrs recorded, ~25 min as MP3).
           </p>
           <div className="mb-4 flex gap-1 rounded-lg bg-slate-100 p-1" role="tablist">
             {(["record", "upload"] as const).map((m) => (
