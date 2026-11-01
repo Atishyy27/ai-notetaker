@@ -33,6 +33,19 @@ function dataFile(): string {
 
 type Store = { sessions: SessionDTO[] };
 
+// Serverless filesystems (Vercel and friends) are read-only apart from /tmp and
+// give no persistent disk. If a write ever hits a read-only FS we switch to an
+// in-process store so the app keeps working for that instance's lifetime instead
+// of returning a 500. This is per-instance and ephemeral: real cross-request
+// persistence is the job of a database (the deploy path). Local dev and tests,
+// which have a writable disk, keep using the JSON file untouched.
+let memory: Store | null = null;
+
+function isReadOnlyFsError(err: unknown): boolean {
+  const code = (err as NodeJS.ErrnoException | null)?.code;
+  return code === "EROFS" || code === "EACCES" || code === "EPERM";
+}
+
 // Promise-chain mutex. Each op is appended to the chain and runs only after the
 // previous one settles, regardless of whether it resolved or rejected.
 let chain: Promise<unknown> = Promise.resolve();
@@ -46,6 +59,7 @@ function withLock<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 async function read(): Promise<Store> {
+  if (memory) return { sessions: memory.sessions.slice() };
   try {
     const raw = await fs.readFile(dataFile(), "utf8");
     const parsed = JSON.parse(raw) as Store;
@@ -56,11 +70,24 @@ async function read(): Promise<Store> {
 }
 
 async function write(store: Store): Promise<void> {
+  if (memory) {
+    memory = { sessions: store.sessions.slice() };
+    return;
+  }
   const file = dataFile();
-  await fs.mkdir(path.dirname(file), { recursive: true });
-  const tmp = `${file}.${randomUUID()}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(store, null, 2), "utf8");
-  await fs.rename(tmp, file);
+  try {
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    const tmp = `${file}.${randomUUID()}.tmp`;
+    await fs.writeFile(tmp, JSON.stringify(store, null, 2), "utf8");
+    await fs.rename(tmp, file);
+  } catch (err) {
+    if (isReadOnlyFsError(err)) {
+      // First write on a read-only FS: adopt the in-process store from here on.
+      memory = { sessions: store.sessions.slice() };
+      return;
+    }
+    throw err;
+  }
 }
 
 export type NewActionItem = {

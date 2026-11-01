@@ -12,9 +12,41 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// metadataBase resolves relative OG/Twitter image URLs against the live origin.
+// Set NEXT_PUBLIC_SITE_URL to the deployed URL in the hosting env; falls back to
+// localhost for dev. Title/name here are still provisional pending the rename.
 export const metadata: Metadata = {
-  title: "AI Notetaker",
-  description: "Record or upload a meeting and get a transcript, summary, and action items.",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  ),
+  title: {
+    default: "AI Notetaker",
+    template: "%s · AI Notetaker",
+  },
+  description:
+    "Record or upload a meeting and get a clean transcript, a topic-wise summary, and tracked action items. Bring your own free API keys; nothing is stored on our servers.",
+  keywords: [
+    "meeting notes",
+    "transcription",
+    "action items",
+    "voice AI",
+    "speech to text",
+    "Hindi",
+    "Indic languages",
+  ],
+  openGraph: {
+    title: "AI Notetaker",
+    description:
+      "Turn any meeting into a transcript, summary, and tracked action items.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AI Notetaker",
+    description:
+      "Turn any meeting into a transcript, summary, and tracked action items.",
+  },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
