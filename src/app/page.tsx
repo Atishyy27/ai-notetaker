@@ -55,6 +55,51 @@ const STEPS = [
   { n: "3", title: "Act", body: "Summary, owners and tasks you can mail out." },
 ];
 
+const FEATURES = [
+  {
+    title: "Any source",
+    body: "Record your mic, capture a meeting tab, or upload an existing file.",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3 3 8l9 5 9-5-9-5Z" /><path d="m3 12 9 5 9-5" /></svg>
+    ),
+  },
+  {
+    title: "Topic-wise summary",
+    body: "The discussion organised into clear topics, not one wall of text.",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 4h14M5 9h14M5 14h9M5 19h9" /></svg>
+    ),
+  },
+  {
+    title: "Owners & action items",
+    body: "Every commitment pulled out with who owns it and when it is due.",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+    ),
+  },
+  {
+    title: "Mail each person",
+    body: "Send everyone just their own tasks, straight from the session.",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></svg>
+    ),
+  },
+  {
+    title: "Indic-friendly",
+    body: "Hindi and code-mixed speech transcribe cleanly, not just English.",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" /></svg>
+    ),
+  },
+  {
+    title: "Bring your own key",
+    body: "Your API keys stay in your browser. Nothing locked in, no bill from us.",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4" /><path d="m10.5 12.5 7-7M16 6l2 2M19 3l2 2" /></svg>
+    ),
+  },
+];
+
 export default function HomePage() {
   const [mode, setMode] = useState<Mode>("mic");
   const [state, setState] = useState<CaptureState>("idle");
@@ -175,11 +220,17 @@ export default function HomePage() {
             </div>
           </div>
         ) : (
+          <>
           <div className="mx-auto max-w-xl">
             <div className="mb-8 text-center">
+              <div className="mb-5 flex justify-center">
+                <span className="chip border border-line bg-surface-2 text-muted">
+                  <span className="text-accent-2">✦</span> Free · bring your own key · no signup
+                </span>
+              </div>
               <h1 className="display text-[2.75rem] text-ink sm:text-6xl">
                 Turn any conversation
-                <br className="hidden sm:block" /> into action
+                <br className="hidden sm:block" /> into <span className="text-gradient">action</span>
               </h1>
               <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-muted">
                 Record or upload a meeting and get a clean transcript, a topic-wise
@@ -240,22 +291,94 @@ export default function HomePage() {
               <p className="mt-0.5 text-xs text-faint">Pre-filled example. No API key needed.</p>
             </div>
 
-            <div className="mt-12 grid gap-3 sm:grid-cols-3">
+          </div>
+
+          <section className="mx-auto mt-20 max-w-5xl">
+            <div className="text-center">
+              <span className="label-mono text-accent">What you get</span>
+              <h2 className="display mt-2 text-3xl text-ink sm:text-4xl">
+                Everything after you stop recording
+              </h2>
+            </div>
+            <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {FEATURES.map((f) => (
+                <div key={f.title} className="card card-lift p-5">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-soft text-accent">
+                    {f.icon}
+                  </span>
+                  <h3 className="mt-3 text-sm font-semibold text-ink">{f.title}</h3>
+                  <p className="mt-1 text-[13px] leading-relaxed text-muted">{f.body}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="mx-auto mt-16 max-w-5xl">
+            <div className="text-center">
+              <span className="label-mono text-accent">How it works</span>
+            </div>
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
               {STEPS.map((s) => (
-                <div key={s.n} className="card card-lift p-4">
+                <div key={s.n} className="card card-lift p-5">
                   <span className="label-mono text-accent">Step {s.n}</span>
                   <h3 className="mt-2 text-sm font-semibold text-ink">{s.title}</h3>
                   <p className="mt-1 text-[13px] leading-relaxed text-muted">{s.body}</p>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
+
+          <section className="mx-auto mt-16 max-w-3xl">
+            <div
+              className="card p-8 text-center"
+              style={{
+                background:
+                  "radial-gradient(70% 120% at 50% 0%, var(--accent-soft), transparent 70%), var(--surface-glass)",
+              }}
+            >
+              <span className="label-mono text-accent-2">Your keys · your data</span>
+              <h2 className="display mt-2 text-3xl text-ink sm:text-4xl">
+                Private by default, free by design
+              </h2>
+              <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted">
+                baithak runs on your own API keys, kept in your browser and never
+                stored on our servers. No subscription and no per-minute bill from
+                us &mdash; you stay on your provider&rsquo;s free tier.
+              </p>
+              <div className="mt-6 flex flex-wrap justify-center gap-3">
+                <button type="button" onClick={() => setSettingsOpen(true)} className="btn btn-primary px-5 py-2.5">
+                  Add your keys
+                </button>
+                <button type="button" onClick={() => void openSample()} disabled={loadingSample} className="btn btn-secondary px-5 py-2.5">
+                  See a sample
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <p className="mt-10 text-center label-mono text-faint">
+            Runs on Groq Whisper · Google Gemini
+          </p>
+          </>
         )}
       </main>
 
-      <footer className="relative z-10 mx-auto w-full max-w-6xl px-4 py-8 text-center">
-        <p className="text-xs text-faint">
-          baithak · bring-your-own-key · recordings saved only with your consent
+      <footer className="relative z-10 mx-auto mt-10 w-full max-w-6xl border-t border-line px-4 py-8">
+        <div className="flex flex-col items-center justify-between gap-3 text-sm sm:flex-row">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-ink">baithak</span>
+            <span className="text-faint">· turn conversations into action</span>
+          </div>
+          <div className="flex items-center gap-4 text-xs text-faint">
+            <Link href="/sessions" className="transition-colors hover:text-ink">History</Link>
+            <button type="button" onClick={() => setSettingsOpen(true)} className="transition-colors hover:text-ink">
+              Keys
+            </button>
+            <span>bring-your-own-key</span>
+          </div>
+        </div>
+        <p className="mt-4 text-center text-xs text-faint sm:text-left">
+          Recordings saved only with your consent.
         </p>
       </footer>
 

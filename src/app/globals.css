@@ -119,6 +119,15 @@ body {
   text-wrap: balance;
 }
 
+/* Gradient text — for a single hero keyword, lit like the primary CTA. */
+.text-gradient {
+  background: var(--grad-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
 /* Mono micro-label — timestamps, meta, section eyebrows (Linear tell).
    Colour is left to the call site (text-faint / text-accent / …). */
 .label-mono {
