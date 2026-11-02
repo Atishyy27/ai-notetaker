@@ -240,16 +240,16 @@ export default function Recorder({
   const startLabel = source === "meeting" ? "Share a tab & record" : "Start recording";
 
   return (
-    <div className="rounded-2xl border border-line bg-surface p-6">
+    <div className="py-2">
       <div className="flex flex-col items-center gap-4">
-        <div className="font-mono text-4xl tabular-nums text-ink">
+        <div className="font-mono text-5xl tabular-nums tracking-tight text-ink">
           {formatTime(elapsed)}
         </div>
         <canvas
           ref={canvasRef}
           width={480}
           height={64}
-          className={`h-16 w-full max-w-md rounded-lg bg-surface-2 ${active ? "" : "opacity-50"}`}
+          className={`h-16 w-full max-w-md rounded-xl bg-surface-2 transition-opacity ${active ? "" : "opacity-40"}`}
           aria-hidden="true"
         />
         <div className="flex gap-3">
@@ -258,8 +258,9 @@ export default function Recorder({
               type="button"
               onClick={start}
               disabled={disabled}
-              className="rounded-lg bg-red-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="btn inline-flex items-center gap-2 rounded-full bg-red-600 px-6 py-2.5 text-sm font-medium text-white shadow-[var(--shadow-sm)] transition-colors hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
+              <span className="h-2.5 w-2.5 rounded-full bg-white" aria-hidden="true" />
               {startLabel}
             </button>
           ) : (
@@ -267,14 +268,14 @@ export default function Recorder({
               <button
                 type="button"
                 onClick={togglePause}
-                className="rounded-lg border border-line px-5 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-2"
+                className="btn btn-secondary px-5 py-2.5"
               >
                 {state === "paused" ? "Resume" : "Pause"}
               </button>
               <button
                 type="button"
                 onClick={stop}
-                className="rounded-lg bg-accent px-5 py-2 text-sm font-medium text-accent-fg transition-opacity hover:opacity-90"
+                className="btn btn-primary px-5 py-2.5"
               >
                 Stop
               </button>

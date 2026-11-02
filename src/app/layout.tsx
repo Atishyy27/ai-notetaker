@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 // metadataBase resolves relative OG/Twitter image URLs against the live origin.
 // Set NEXT_PUBLIC_SITE_URL to the deployed URL in the hosting env; falls back to
-// localhost for dev. Title/name here are still provisional pending the rename.
+// localhost for dev.
 export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",

@@ -26,6 +26,8 @@ export default function InsightsPanel({
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const done = actionItems.filter((i) => i.done).length;
+
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     const text = task.trim();
@@ -44,37 +46,46 @@ export default function InsightsPanel({
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-2xl border border-line bg-surface">
-        <h2 className="border-b border-line px-5 py-3.5 text-sm font-semibold text-ink">
-          Summary
-        </h2>
-        <div className="space-y-4 p-5">
-          {summary.length === 0 && (
-            <p className="text-sm text-faint">No summary available.</p>
-          )}
-          {summary.map((topic) => (
-            <div key={topic.topic}>
-              <h3 className="text-sm font-semibold text-ink">{topic.topic}</h3>
-              <ul className="mt-1.5 space-y-1 pl-4 text-sm text-muted">
-                {topic.points.map((point, i) => (
-                  <li key={i} className="list-disc">
-                    {point}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+      {/* Summary — reads like a written document, not boxed widgets. */}
+      <section className="card p-6 sm:p-7">
+        <div className="mb-4 flex items-center gap-2">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-faint">
+            Summary
+          </h2>
+          <div className="h-px flex-1 bg-line" />
         </div>
+        {summary.length === 0 ? (
+          <p className="text-sm text-faint">No summary available.</p>
+        ) : (
+          <div className="space-y-6">
+            {summary.map((topic) => (
+              <div key={topic.topic}>
+                <h3 className="text-[15px] font-semibold text-ink">{topic.topic}</h3>
+                <ul className="mt-2 space-y-1.5">
+                  {topic.points.map((point, i) => (
+                    <li key={i} className="flex gap-2.5 text-[15px] leading-relaxed text-muted">
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent/60" aria-hidden="true" />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
-      <section className="overflow-hidden rounded-2xl border border-line bg-surface">
-        <h2 className="border-b border-line px-5 py-3.5 text-sm font-semibold text-ink">
-          Action items
-          <span className="ml-2 font-normal text-faint">{actionItems.length}</span>
-        </h2>
+      {/* Action items — crisp checklist */}
+      <section className="card overflow-hidden">
+        <div className="flex items-center justify-between border-b border-line px-5 py-4">
+          <h2 className="text-sm font-semibold text-ink">Action items</h2>
+          <span className="chip bg-surface-2 text-muted">
+            {done}/{actionItems.length} done
+          </span>
+        </div>
         <div className="px-5">
           {actionItems.length === 0 ? (
-            <p className="py-4 text-sm text-faint">No action items yet.</p>
+            <p className="py-5 text-sm text-faint">No action items yet.</p>
           ) : (
             <ul className="divide-y divide-line">
               {actionItems.map((item) => (
@@ -88,21 +99,17 @@ export default function InsightsPanel({
             </ul>
           )}
         </div>
-        <form onSubmit={handleAdd} className="border-t border-line p-5">
+        <form onSubmit={handleAdd} className="border-t border-line p-4">
           <div className="flex gap-2">
             <input
               value={task}
               onChange={(e) => setTask(e.target.value)}
-              placeholder="Add a task"
+              placeholder="Add a task…"
               disabled={adding}
-              className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none disabled:opacity-60"
+              className="field flex-1 disabled:opacity-60"
             />
-            <button
-              type="submit"
-              disabled={adding || !task.trim()}
-              className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {adding ? "Adding…" : "Add task"}
+            <button type="submit" disabled={adding || !task.trim()} className="btn btn-primary px-4 py-2">
+              {adding ? "Adding…" : "Add"}
             </button>
           </div>
           {error && (

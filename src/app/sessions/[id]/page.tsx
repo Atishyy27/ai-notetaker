@@ -19,13 +19,12 @@ export default async function SessionPage({
 
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
-      <nav className="mb-6">
-        <Link
-          href="/sessions"
-          className="text-sm text-muted transition-colors hover:text-ink"
-        >
-          ← History
+      <nav className="mb-6 flex items-center justify-between">
+        <Link href="/sessions" className="btn btn-ghost -ml-2 gap-1.5 px-2 py-1.5">
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+          History
         </Link>
+        <Link href="/" className="btn btn-secondary px-3 py-1.5">New session</Link>
       </nav>
       <Dashboard session={session} />
     </main>
