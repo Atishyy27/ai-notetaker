@@ -20,8 +20,8 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   ),
   title: {
-    default: "AI Notetaker",
-    template: "%s · AI Notetaker",
+    default: "baithak",
+    template: "%s · baithak",
   },
   description:
     "Record or upload a meeting and get a clean transcript, a topic-wise summary, and tracked action items. Recordings and transcripts are saved so your sessions persist and the product improves.",
@@ -35,14 +35,14 @@ export const metadata: Metadata = {
     "Indic languages",
   ],
   openGraph: {
-    title: "AI Notetaker",
+    title: "baithak",
     description:
       "Turn any meeting into a transcript, summary, and tracked action items.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Notetaker",
+    title: "baithak",
     description:
       "Turn any meeting into a transcript, summary, and tracked action items.",
   },

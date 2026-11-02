@@ -23,10 +23,10 @@ export async function POST(req: Request) {
     return Response.json({ error: "transcript is required." }, { status: 400 });
   }
 
-  const title =
-    typeof body.title === "string" && body.title.trim()
-      ? body.title.trim()
-      : defaultTitle();
+  // An explicit title from the caller wins; otherwise we use the model's title
+  // (computed below, after analysis), falling back to a timestamp.
+  const titleOverride =
+    typeof body.title === "string" && body.title.trim() ? body.title.trim() : null;
   const durationSec =
     typeof body.durationSec === "number" ? Math.round(body.durationSec) : null;
 
@@ -38,6 +38,12 @@ export async function POST(req: Request) {
   } catch (err) {
     return mapAiError(err);
   }
+
+  const title =
+    titleOverride ??
+    (typeof analysis.title === "string" && analysis.title.trim()
+      ? analysis.title.trim()
+      : defaultTitle());
 
   const session = await createSession({
     title,

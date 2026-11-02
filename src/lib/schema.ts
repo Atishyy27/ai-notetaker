@@ -45,6 +45,11 @@ export const summaryTopicSchema = z.object({
 export type SummaryTopic = z.infer<typeof summaryTopicSchema>;
 
 export const analysisSchema = z.object({
+  title: z
+    .string()
+    .describe(
+      "A short, specific title naming this meeting in 3-6 words, no quotes, no date (e.g. 'Model launch sync', 'Q3 hiring plan').",
+    ),
   summary: z
     .array(summaryTopicSchema)
     .describe("The executive summary, organised by key discussion topic."),

@@ -79,8 +79,22 @@ export default function HomePage() {
       <nav className="mb-10 flex items-center justify-between">
         {/* Wordmark. "baithak" is the provisional name; swap here once it's locked. */}
         <Link href="/" className="flex items-center gap-2">
+          {/* baithak = a gathering/sitting: three figures seated on a mat. */}
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-accent-fg">
-            <span className="h-2.5 w-2.5 rounded-full bg-accent-fg" />
+            <svg
+              viewBox="0 0 24 24"
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <circle cx="7.5" cy="10" r="1.5" fill="currentColor" stroke="none" />
+              <circle cx="12" cy="9" r="1.5" fill="currentColor" stroke="none" />
+              <circle cx="16.5" cy="10" r="1.5" fill="currentColor" stroke="none" />
+              <path d="M6 15h12" />
+            </svg>
           </span>
           <span className="text-lg font-semibold tracking-tight text-ink">
             baithak

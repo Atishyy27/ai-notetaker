@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { analysisSchema } from "./schema";
-import { SAMPLE_SUMMARY, SAMPLE_ACTION_ITEMS, SAMPLE_TRANSCRIPT } from "./sample";
+import {
+  SAMPLE_TITLE,
+  SAMPLE_SUMMARY,
+  SAMPLE_ACTION_ITEMS,
+  SAMPLE_TRANSCRIPT,
+} from "./sample";
 
 // The sample session is seeded straight into the store, so it never passes
 // through the AI schema at runtime. This test is the guard that keeps the
@@ -8,6 +13,7 @@ import { SAMPLE_SUMMARY, SAMPLE_ACTION_ITEMS, SAMPLE_TRANSCRIPT } from "./sample
 describe("sample fixture", () => {
   it("conforms to the analysis schema", () => {
     const r = analysisSchema.safeParse({
+      title: SAMPLE_TITLE,
       summary: SAMPLE_SUMMARY,
       actionItems: SAMPLE_ACTION_ITEMS,
     });

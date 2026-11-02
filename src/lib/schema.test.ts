@@ -56,6 +56,7 @@ describe("priorityEnum", () => {
 describe("analysisSchema", () => {
   it("parses a full analysis object", () => {
     const parsed = analysisSchema.parse({
+      title: "Launch sync",
       summary: [{ topic: "Launch", points: ["Ship Tuesday", "QA owns signoff"] }],
       actionItems: [
         { task: "File the ticket", assignee: "Sam", dueDate: null, priority: "Medium" },
@@ -67,6 +68,7 @@ describe("analysisSchema", () => {
 
   it("rejects a summary topic that is not an object", () => {
     const r = analysisSchema.safeParse({
+      title: "Standup",
       summary: ["just a string"],
       actionItems: [],
     });
