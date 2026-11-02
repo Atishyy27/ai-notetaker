@@ -3,11 +3,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type RecState = "idle" | "recording" | "paused";
+type Source = "mic" | "meeting";
 
 type Props = {
   onComplete: (blob: Blob, durationSec: number) => void;
   /** Reports recorder state so the parent can mirror it in a status badge. */
   onStateChange?: (state: RecState) => void;
+  /** "mic" records the microphone; "meeting" records a shared tab's audio
+   *  (the call) mixed with the mic. */
+  source?: Source;
   disabled?: boolean;
 };
 
@@ -20,23 +24,28 @@ function formatTime(sec: number): string {
 function describeMicError(err: unknown): string {
   if (err instanceof DOMException) {
     if (err.name === "NotAllowedError") {
-      return "Microphone access was denied. Allow it in your browser settings and try again.";
+      return "Permission was denied. Allow access in your browser and try again.";
     }
     if (err.name === "NotFoundError") {
       return "No microphone was found. Connect one and try again.";
     }
   }
-  return "Could not start recording. Check your microphone and try again.";
+  return "Could not start recording. Check your devices and try again.";
 }
 
-export default function Recorder({ onComplete, onStateChange, disabled = false }: Props) {
+export default function Recorder({
+  onComplete,
+  onStateChange,
+  source = "mic",
+  disabled = false,
+}: Props) {
   const [state, setState] = useState<RecState>("idle");
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const streamsRef = useRef<MediaStream[]>([]);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const rafRef = useRef<number | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -61,8 +70,8 @@ export default function Recorder({ onComplete, onStateChange, disabled = false }
     timerRef.current = null;
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     rafRef.current = null;
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    streamRef.current = null;
+    streamsRef.current.forEach((s) => s.getTracks().forEach((t) => t.stop()));
+    streamsRef.current = [];
     if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
       void audioCtxRef.current.close();
     }
@@ -113,24 +122,70 @@ export default function Recorder({ onComplete, onStateChange, disabled = false }
     render();
   }
 
+  // Build the stream to record and an analyser for the visualizer. For "meeting"
+  // we capture a tab's audio via getDisplayMedia (Chrome only shares audio when
+  // a tab/screen is shared and "share tab audio" is ticked, and it requires a
+  // video request), drop the video, and mix it with the mic through an
+  // AudioContext destination. Throws a user-readable message on a bad setup.
+  async function buildStream(): Promise<{ record: MediaStream; analyser: AnalyserNode }> {
+    const ctx = new AudioContext();
+    audioCtxRef.current = ctx;
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 256;
+
+    if (source === "meeting") {
+      if (!navigator.mediaDevices?.getDisplayMedia) {
+        throw new Error("Tab-audio capture isn't supported in this browser. Try uploading a file.");
+      }
+      const display = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: true,
+      });
+      streamsRef.current.push(display);
+      display.getVideoTracks().forEach((t) => t.stop());
+      if (display.getAudioTracks().length === 0) {
+        throw new Error('No tab audio was shared. Pick a tab and tick "Also share tab audio", then try again.');
+      }
+      // Stop recording if the user ends the share from the browser bar.
+      display.getAudioTracks()[0].addEventListener("ended", () => stop());
+
+      const dest = ctx.createMediaStreamDestination();
+      const tabNode = ctx.createMediaStreamSource(new MediaStream(display.getAudioTracks()));
+      tabNode.connect(dest);
+      tabNode.connect(analyser);
+
+      try {
+        const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+        streamsRef.current.push(mic);
+        const micNode = ctx.createMediaStreamSource(mic);
+        micNode.connect(dest);
+        micNode.connect(analyser);
+      } catch {
+        // Mic is optional for a meeting; record the tab alone if denied.
+      }
+      return { record: dest.stream, analyser };
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      throw new Error("Recording isn't supported in this browser. Try uploading a file.");
+    }
+    const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+    streamsRef.current.push(mic);
+    ctx.createMediaStreamSource(mic).connect(analyser);
+    return { record: mic, analyser };
+  }
+
   async function start() {
     setError(null);
-    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
-      setError("Recording is not supported in this browser. Try uploading a file instead.");
+    if (typeof MediaRecorder === "undefined") {
+      setError("Recording isn't supported in this browser. Try uploading a file instead.");
       return;
     }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-
-      const audioCtx = new AudioContext();
-      audioCtxRef.current = audioCtx;
-      const analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 256;
-      audioCtx.createMediaStreamSource(stream).connect(analyser);
+      const { record, analyser } = await buildStream();
 
       const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : undefined;
-      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      const recorder = new MediaRecorder(record, mimeType ? { mimeType } : undefined);
       chunksRef.current = [];
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
@@ -156,7 +211,7 @@ export default function Recorder({ onComplete, onStateChange, disabled = false }
       changeState("recording");
     } catch (err) {
       releaseResources();
-      setError(describeMicError(err));
+      setError(err instanceof Error ? err.message : describeMicError(err));
       changeState("idle");
     }
   }
@@ -182,6 +237,7 @@ export default function Recorder({ onComplete, onStateChange, disabled = false }
   }
 
   const active = state !== "idle";
+  const startLabel = source === "meeting" ? "Share a tab & record" : "Start recording";
 
   return (
     <div className="rounded-2xl border border-line bg-surface p-6">
@@ -202,9 +258,9 @@ export default function Recorder({ onComplete, onStateChange, disabled = false }
               type="button"
               onClick={start}
               disabled={disabled}
-              className="rounded-lg bg-red-600 px-5 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg bg-red-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Start recording
+              {startLabel}
             </button>
           ) : (
             <>

@@ -11,13 +11,13 @@ import StatusBadge from "@/components/StatusBadge";
 import { analyzeTranscript, loadSample, transcribeAudio } from "@/lib/api";
 import type { CaptureState, SessionDTO } from "@/lib/types";
 
-type Mode = "record" | "upload";
+type Mode = "mic" | "meeting" | "upload";
 type Source = { blob: Blob; durationSec: number | null };
 
 const PROCESSING: CaptureState[] = ["uploading", "transcribing", "analyzing"];
 
 export default function HomePage() {
-  const [mode, setMode] = useState<Mode>("record");
+  const [mode, setMode] = useState<Mode>("mic");
   const [state, setState] = useState<CaptureState>("idle");
   const [session, setSession] = useState<SessionDTO | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -156,29 +156,43 @@ export default function HomePage() {
           </div>
 
           <div className="mb-4 flex gap-1 rounded-xl border border-line bg-surface p-1" role="tablist">
-            {(["record", "upload"] as const).map((m) => (
+            {(
+              [
+                { key: "mic", label: "Mic" },
+                { key: "meeting", label: "Meeting" },
+                { key: "upload", label: "Upload" },
+              ] as const
+            ).map(({ key, label }) => (
               <button
-                key={m}
+                key={key}
                 role="tab"
-                aria-selected={mode === m}
+                aria-selected={mode === key}
                 disabled={state === "recording" || state === "paused"}
-                onClick={() => setMode(m)}
-                className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium capitalize transition-colors disabled:cursor-not-allowed ${
-                  mode === m ? "bg-accent text-accent-fg" : "text-muted hover:text-ink"
+                onClick={() => setMode(key)}
+                className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed ${
+                  mode === key ? "bg-accent text-accent-fg" : "text-muted hover:text-ink"
                 }`}
               >
-                {m}
+                {label}
               </button>
             ))}
           </div>
 
-          {mode === "record" ? (
-            <Recorder
-              onStateChange={setState}
-              onComplete={(blob, durationSec) => void process({ blob, durationSec })}
-            />
-          ) : (
+          {mode === "upload" ? (
             <AudioUpload onSelect={(file) => void process({ blob: file, durationSec: null })} />
+          ) : (
+            <>
+              {mode === "meeting" && (
+                <p className="mb-3 text-center text-xs text-muted">
+                  Pick the tab your meeting is in and tick “Also share tab audio”. Your mic is mixed in.
+                </p>
+              )}
+              <Recorder
+                source={mode}
+                onStateChange={setState}
+                onComplete={(blob, durationSec) => void process({ blob, durationSec })}
+              />
+            </>
           )}
 
           <p className="mt-4 text-center text-xs text-faint">
