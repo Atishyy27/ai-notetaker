@@ -56,10 +56,10 @@ export default function Dashboard({ session }: { session: SessionDTO }) {
   return (
     <div>
       <header className="mb-7">
-        <h1 className="display text-2xl font-semibold text-ink sm:text-3xl">
+        <h1 className="display text-3xl text-ink sm:text-[2.6rem]">
           {session.title}
         </h1>
-        <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-muted">
+        <div className="label-mono mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-muted">
           <span>{formatDate(session.createdAt)}</span>
           {duration && (
             <>
@@ -68,7 +68,7 @@ export default function Dashboard({ session }: { session: SessionDTO }) {
             </>
           )}
           <span className="text-faint">·</span>
-          <span>
+          <span className="text-accent">
             {openCount} open {openCount === 1 ? "task" : "tasks"}
           </span>
         </div>

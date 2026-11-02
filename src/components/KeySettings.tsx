@@ -142,18 +142,10 @@ export default function KeySettings({
         </div>
 
         <div className="mt-6 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-2"
-          >
+          <button type="button" onClick={onClose} className="btn btn-secondary px-4 py-2">
             Cancel
           </button>
-          <button
-            type="button"
-            onClick={save}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-opacity hover:opacity-90"
-          >
+          <button type="button" onClick={save} className="btn btn-primary px-4 py-2">
             Save keys
           </button>
         </div>

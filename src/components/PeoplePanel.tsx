@@ -73,7 +73,7 @@ export default function PeoplePanel({
   return (
     <section className="card overflow-hidden">
       <div className="flex items-center justify-between border-b border-line px-5 py-4">
-        <h2 className="text-sm font-semibold text-ink">People &amp; deliverables</h2>
+        <h2 className="label-mono text-faint">People</h2>
         <span className="chip bg-surface-2 text-muted">{people.length}</span>
       </div>
 

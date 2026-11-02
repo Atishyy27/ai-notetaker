@@ -258,7 +258,7 @@ export default function Recorder({
               type="button"
               onClick={start}
               disabled={disabled}
-              className="btn inline-flex items-center gap-2 rounded-full bg-red-600 px-6 py-2.5 text-sm font-medium text-white shadow-[var(--shadow-sm)] transition-colors hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="btn rec-pulse inline-flex items-center gap-2 rounded-full bg-red-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span className="h-2.5 w-2.5 rounded-full bg-white" aria-hidden="true" />
               {startLabel}

@@ -76,9 +76,9 @@ export default function SessionsPage() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[15px] font-semibold text-ink">{s.title}</p>
-                  <p className="mt-0.5 text-xs text-muted">{formatDate(s.createdAt)}</p>
+                  <p className="mt-0.5 font-mono text-xs text-muted">{formatDate(s.createdAt)}</p>
                 </div>
-                <span className="chip shrink-0 bg-surface-2 text-muted">
+                <span className="chip shrink-0 bg-surface-2 font-mono text-muted">
                   {s.actionItemCount} {s.actionItemCount === 1 ? "task" : "tasks"}
                 </span>
               </Link>

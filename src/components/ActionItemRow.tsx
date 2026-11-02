@@ -6,8 +6,8 @@ import { avatarColor, initials } from "@/lib/avatar";
 import type { ActionItemDTO } from "@/lib/types";
 
 const PRIORITY_STYLES: Record<string, string> = {
-  High: "bg-red-500/12 text-red-600",
-  Medium: "bg-amber-500/15 text-amber-700",
+  High: "bg-red-500/15 text-red-400",
+  Medium: "bg-amber-500/15 text-amber-500",
   Low: "bg-surface-2 text-muted",
 };
 
@@ -112,7 +112,7 @@ export default function ActionItemRow({ item, onChange, onDelete }: Props) {
             </button>
           )}
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-            <span className={`chip font-medium ${PRIORITY_STYLES[item.priority] ?? PRIORITY_STYLES.Low}`}>
+            <span className={`chip font-mono text-[0.68rem] uppercase tracking-wide ${PRIORITY_STYLES[item.priority] ?? PRIORITY_STYLES.Low}`}>
               {item.priority}
             </span>
             {named && color && (
@@ -128,7 +128,7 @@ export default function ActionItemRow({ item, onChange, onDelete }: Props) {
               </span>
             )}
             {item.dueDate && (
-              <span className="inline-flex items-center gap-1 text-faint">
+              <span className="inline-flex items-center gap-1 font-mono text-[0.72rem] text-faint">
                 <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
                   <rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 9h18M8 3v4M16 3v4" />
                 </svg>

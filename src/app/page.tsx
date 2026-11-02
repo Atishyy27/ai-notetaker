@@ -177,7 +177,7 @@ export default function HomePage() {
         ) : (
           <div className="mx-auto max-w-xl">
             <div className="mb-8 text-center">
-              <h1 className="display text-4xl font-semibold text-ink sm:text-[2.9rem] sm:leading-[1.05]">
+              <h1 className="display text-[2.75rem] text-ink sm:text-6xl">
                 Turn any conversation
                 <br className="hidden sm:block" /> into action
               </h1>
@@ -243,8 +243,8 @@ export default function HomePage() {
             <div className="mt-12 grid gap-3 sm:grid-cols-3">
               {STEPS.map((s) => (
                 <div key={s.n} className="card card-lift p-4">
-                  <span className="chip bg-accent-soft text-accent">{s.n}</span>
-                  <h3 className="mt-2.5 text-sm font-semibold text-ink">{s.title}</h3>
+                  <span className="label-mono text-accent">Step {s.n}</span>
+                  <h3 className="mt-2 text-sm font-semibold text-ink">{s.title}</h3>
                   <p className="mt-1 text-[13px] leading-relaxed text-muted">{s.body}</p>
                 </div>
               ))}

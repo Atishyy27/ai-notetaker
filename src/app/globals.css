@@ -1,52 +1,79 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   Design tokens. Light is a warm paper; dark is a true near-black. Every
-   surface class (bg-surface, text-ink, border-line, bg-accent…) reads from
-   these, and the values swap under prefers-color-scheme, so dark mode needs no
-   `dark:` variants. Shadows are warm-tinted and soft (editorial, not chunky).
+   baithak design system — a dark, gradient-lit, glassy UI with Linear-grade
+   craft in the chrome and editorial warmth in the content.
+
+   DARK IS THE BRAND: :root is the dark theme. A light variant lives under
+   @media (prefers-color-scheme: light) for people who ask their OS for light.
+   Every surface class (bg-surface, text-ink, border-line, bg-accent…) reads
+   from these tokens, so no `dark:` variants anywhere.
+
+   Three layers, kept coherent:
+     1. skeleton  — near-black canvas, hairline borders, tight-tracked chrome.
+     2. lighting  — indigo→violet→teal gradient mesh + glow, glassy surfaces.
+     3. content   — a serif display for big headings, calm editorial body.
 --------------------------------------------------------------------------- */
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
 
-  --canvas: #f4f3ef;
-  --surface: #ffffff;
-  --surface-2: #faf9f6;
-  --ink: #17171a;
-  --muted: #6b7280;
-  --faint: #9aa0a6;
-  --line: #e7e3da;
-  --line-strong: #d9d4c8;
-  --accent: #4f46e5;
-  --accent-hover: #4338ca;
+  --canvas: #0a0a0b;
+  --surface: #121215;
+  --surface-2: #1a1a1f;
+  /* Glass: translucent surface for cards, lit by the canvas behind it. */
+  --surface-glass: rgba(255, 255, 255, 0.035);
+  --ink: #fafafa;
+  --muted: #a1a1aa;
+  --faint: #71717a;
+  --line: #1f1f23;
+  --line-strong: #2a2a30;
+
+  --accent: #6366f1; /* indigo — primary */
+  --accent-hover: #818cf8;
+  --accent-grad-2: #8b5cf6; /* violet — gradient end */
+  --accent-2: #2dd4bf; /* teal — sparing secondary highlight */
   --accent-fg: #ffffff;
-  --accent-soft: #eef0ff;
+  --accent-soft: rgba(99, 102, 241, 0.15);
+  --accent-2-soft: rgba(45, 212, 191, 0.13);
 
-  --shadow-sm: 0 1px 2px rgba(24, 24, 27, 0.05), 0 1px 1px rgba(24, 24, 27, 0.03);
-  --shadow: 0 2px 6px -2px rgba(24, 24, 27, 0.08), 0 6px 20px -6px rgba(24, 24, 27, 0.07);
-  --shadow-lg: 0 10px 34px -8px rgba(24, 24, 27, 0.14), 0 4px 10px -4px rgba(24, 24, 27, 0.06);
-  --ring: color-mix(in oklab, var(--accent) 32%, transparent);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow: 0 2px 10px -2px rgba(0, 0, 0, 0.55), 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 16px 48px -12px rgba(0, 0, 0, 0.7);
+  --glow: 0 0 0 1px rgba(99, 102, 241, 0.15), 0 10px 40px -10px rgba(99, 102, 241, 0.45);
+  --ring: rgba(99, 102, 241, 0.5);
+
+  --grad-primary: linear-gradient(135deg, var(--accent), var(--accent-grad-2));
 }
 
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   :root {
-    --canvas: #0a0a0c;
-    --surface: #161619;
-    --surface-2: #1d1d21;
-    --ink: #f4f4f5;
-    --muted: #a1a1aa;
-    --faint: #70707a;
-    --line: #27272c;
-    --line-strong: #34343b;
-    --accent: #818cf8;
-    --accent-hover: #a5b0ff;
-    --accent-fg: #0a0a0c;
-    --accent-soft: #1e1e40;
+    color-scheme: light;
 
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.5), 0 8px 24px -8px rgba(0, 0, 0, 0.45);
-    --shadow-lg: 0 12px 40px -8px rgba(0, 0, 0, 0.6);
-    --ring: color-mix(in oklab, var(--accent) 45%, transparent);
+    --canvas: #f7f7f8;
+    --surface: #ffffff;
+    --surface-2: #f3f3f5;
+    --surface-glass: rgba(255, 255, 255, 0.7);
+    --ink: #17171a;
+    --muted: #52525b;
+    --faint: #8b8b93;
+    --line: #e7e7ea;
+    --line-strong: #d6d6db;
+
+    --accent: #5b55eb;
+    --accent-hover: #4a43d8;
+    --accent-grad-2: #7c3aed;
+    --accent-2: #0d9488;
+    --accent-fg: #ffffff;
+    --accent-soft: rgba(99, 102, 241, 0.12);
+    --accent-2-soft: rgba(13, 148, 136, 0.1);
+
+    --shadow-sm: 0 1px 2px rgba(24, 24, 27, 0.06);
+    --shadow: 0 2px 8px -2px rgba(24, 24, 27, 0.08), 0 8px 24px -8px rgba(24, 24, 27, 0.08);
+    --shadow-lg: 0 16px 44px -10px rgba(24, 24, 27, 0.16);
+    --glow: 0 0 0 1px rgba(91, 85, 235, 0.12), 0 10px 36px -12px rgba(91, 85, 235, 0.3);
+    --ring: rgba(91, 85, 235, 0.45);
+
+    --grad-primary: linear-gradient(135deg, var(--accent), var(--accent-grad-2));
   }
 }
 
@@ -61,10 +88,13 @@
   --color-line-strong: var(--line-strong);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
+  --color-accent-2: var(--accent-2);
   --color-accent-fg: var(--accent-fg);
   --color-accent-soft: var(--accent-soft);
+  --color-accent-2-soft: var(--accent-2-soft);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-instrument-serif), Georgia, "Times New Roman", serif;
 }
 
 body {
@@ -80,31 +110,73 @@ body {
   color: var(--ink);
 }
 
-/* Display type: tighter tracking + balanced wrapping for headlines. */
+/* Editorial display — serif, calm, generous. Used for the hero + session title. */
 .display {
-  letter-spacing: -0.02em;
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
   text-wrap: balance;
 }
 
-/* A soft accent aura behind the hero — calm, not loud. */
+/* Mono micro-label — timestamps, meta, section eyebrows (Linear tell).
+   Colour is left to the call site (text-faint / text-accent / …). */
+.label-mono {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* The gradient-mesh aura: indigo → violet → teal bleeding from the top, heavily
+   softened. Ambient lighting on the dark canvas, never a hard band. */
 .hero-aura {
   position: absolute;
-  inset: -20% 0 auto 0;
-  height: 340px;
-  background: radial-gradient(
-    60% 60% at 50% 0%,
-    color-mix(in oklab, var(--accent) 16%, transparent),
-    transparent 70%
-  );
+  inset: -30% -10% auto -10%;
+  height: 520px;
+  background:
+    radial-gradient(40% 55% at 30% 0%, rgba(99, 102, 241, 0.28), transparent 70%),
+    radial-gradient(42% 55% at 55% 5%, rgba(139, 92, 246, 0.24), transparent 72%),
+    radial-gradient(38% 50% at 78% 0%, rgba(45, 212, 191, 0.14), transparent 70%);
+  filter: blur(36px);
+  opacity: 0.9;
   pointer-events: none;
   z-index: 0;
 }
+@media (prefers-color-scheme: light) {
+  .hero-aura {
+    opacity: 0.55;
+  }
+}
+
+kbd {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  line-height: 1;
+  padding: 0.18rem 0.36rem;
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: 0.35rem;
+  background: var(--surface-2);
+  color: var(--muted);
+}
 
 /* ---------------------------------------------------------------------------
-   Reusable components — so every card, button, field and chip is consistent.
+   Components — one source of truth for cards, buttons, fields, chips, segments.
 --------------------------------------------------------------------------- */
 @layer components {
+  /* Glassy, lit surface — translucent + blur + hairline, so depth reads layered. */
   .card {
+    background: var(--surface-glass);
+    backdrop-filter: blur(12px) saturate(1.2);
+    -webkit-backdrop-filter: blur(12px) saturate(1.2);
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Opaque variant where blur-over-nothing would look flat (modals, rails). */
+  .card-solid {
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 1rem;
@@ -112,11 +184,12 @@ body {
   }
 
   .card-lift {
-    transition: box-shadow 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+    transition: box-shadow 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
   }
   .card-lift:hover {
-    box-shadow: var(--shadow);
-    border-color: var(--line-strong);
+    border-color: color-mix(in oklab, var(--accent) 45%, var(--line));
+    box-shadow: var(--glow);
+    transform: translateY(-1px);
   }
 
   .btn {
@@ -129,7 +202,7 @@ body {
     font-weight: 500;
     line-height: 1;
     transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease,
-      opacity 0.16s ease, transform 0.08s ease;
+      border-color 0.16s ease, opacity 0.16s ease, transform 0.08s ease;
     cursor: pointer;
     white-space: nowrap;
   }
@@ -145,23 +218,25 @@ body {
     transform: translateY(0.5px);
   }
 
+  /* Primary CTA — gradient fill + soft glow, lifts on hover. */
   .btn-primary {
-    background: var(--accent);
-    color: var(--accent-fg);
-    box-shadow: var(--shadow-sm);
+    background: var(--grad-primary);
+    color: #ffffff;
+    box-shadow: 0 6px 22px -8px rgba(99, 102, 241, 0.6);
   }
   .btn-primary:not(:disabled):hover {
-    background: var(--accent-hover);
+    box-shadow: 0 8px 28px -6px rgba(99, 102, 241, 0.75);
+    transform: translateY(-1px);
   }
 
   .btn-secondary {
-    background: var(--surface);
+    background: var(--surface-glass);
     color: var(--ink);
-    border: 1px solid var(--line);
+    border: 1px solid var(--line-strong);
   }
   .btn-secondary:not(:disabled):hover {
-    background: var(--surface-2);
-    border-color: var(--line-strong);
+    border-color: color-mix(in oklab, var(--accent) 50%, var(--line-strong));
+    color: var(--ink);
   }
 
   .btn-ghost {
@@ -174,8 +249,8 @@ body {
   .field {
     width: 100%;
     border-radius: 0.6rem;
-    border: 1px solid var(--line);
-    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    background: var(--surface-2);
     padding: 0.5rem 0.75rem;
     font-size: 0.875rem;
     color: var(--ink);
@@ -201,12 +276,13 @@ body {
     line-height: 1.4;
   }
 
-  /* Segmented control (Mic / Meeting / Upload, dashboard tabs). */
+  /* Segmented control — inset track; active segment is an elevated, lit pill.
+     Mono labels are part of the Linear look. */
   .segment {
     display: flex;
     gap: 0.25rem;
-    padding: 0.25rem;
-    border-radius: 0.75rem;
+    padding: 0.28rem;
+    border-radius: 0.8rem;
     background: var(--surface-2);
     border: 1px solid var(--line);
   }
@@ -215,25 +291,53 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.4rem;
+    gap: 0.45rem;
     border-radius: 0.55rem;
     padding: 0.5rem 0.75rem;
-    font-size: 0.875rem;
-    font-weight: 500;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.01em;
     color: var(--muted);
-    transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+    border: 1px solid transparent;
+    transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease,
+      border-color 0.16s ease;
     cursor: pointer;
   }
   .segment-btn:hover:not([aria-selected="true"]):not(:disabled) {
     color: var(--ink);
   }
   .segment-btn[aria-selected="true"] {
-    background: var(--surface);
+    background: var(--surface-glass);
     color: var(--ink);
-    box-shadow: var(--shadow-sm);
+    border-color: color-mix(in oklab, var(--accent) 35%, var(--line-strong));
+    box-shadow: var(--shadow-sm), 0 0 18px -6px rgba(99, 102, 241, 0.4);
   }
   .segment-btn:disabled {
     cursor: not-allowed;
     opacity: 0.55;
+  }
+}
+
+/* Record button: a live, glowing pulse while inviting / recording. */
+.rec-pulse {
+  animation: rec-pulse 2s ease-in-out infinite;
+}
+@keyframes rec-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 9px rgba(239, 68, 68, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rec-pulse {
+    animation: none;
+  }
+  .card-lift:hover,
+  .btn-primary:not(:disabled):hover {
+    transform: none;
   }
 }

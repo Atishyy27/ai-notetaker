@@ -48,10 +48,8 @@ export default function InsightsPanel({
     <div className="space-y-6">
       {/* Summary — reads like a written document, not boxed widgets. */}
       <section className="card p-6 sm:p-7">
-        <div className="mb-4 flex items-center gap-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-faint">
-            Summary
-          </h2>
+        <div className="mb-4 flex items-center gap-3">
+          <h2 className="label-mono text-faint">Summary</h2>
           <div className="h-px flex-1 bg-line" />
         </div>
         {summary.length === 0 ? (
@@ -78,8 +76,8 @@ export default function InsightsPanel({
       {/* Action items — crisp checklist */}
       <section className="card overflow-hidden">
         <div className="flex items-center justify-between border-b border-line px-5 py-4">
-          <h2 className="text-sm font-semibold text-ink">Action items</h2>
-          <span className="chip bg-surface-2 text-muted">
+          <h2 className="label-mono text-faint">Action items</h2>
+          <span className="chip bg-surface-2 font-mono text-muted">
             {done}/{actionItems.length} done
           </span>
         </div>
@@ -112,8 +110,11 @@ export default function InsightsPanel({
               {adding ? "Adding…" : "Add"}
             </button>
           </div>
+          <p className="mt-2 flex items-center gap-1.5 text-xs text-faint">
+            Press <kbd>↵</kbd> to add a task
+          </p>
           {error && (
-            <p role="alert" className="mt-2 text-xs text-red-600">
+            <p role="alert" className="mt-1 text-xs text-red-600">
               {error}
             </p>
           )}
