@@ -3,9 +3,16 @@
 import { useState } from "react";
 import type { ActionItemDTO, SessionDTO } from "@/lib/types";
 import InsightsPanel from "./InsightsPanel";
+import PeoplePanel from "./PeoplePanel";
 import TranscriptPanel from "./TranscriptPanel";
 
-type Tab = "insights" | "transcript";
+type Tab = "insights" | "people" | "transcript";
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: "insights", label: "Insights" },
+  { key: "people", label: "People" },
+  { key: "transcript", label: "Transcript" },
+];
 
 function formatDuration(sec: number | null): string | null {
   if (sec === null) return null;
@@ -33,12 +40,17 @@ export default function Dashboard({ session }: { session: SessionDTO }) {
       onItemAdd={(item) => setItems((prev) => [...prev, item])}
     />
   );
+  const people = (
+    <PeoplePanel actionItems={items} sessionTitle={session.title} />
+  );
 
   return (
     <div>
-      <header className="mb-4">
-        <h1 className="text-xl font-semibold text-slate-900">{session.title}</h1>
-        <p className="text-sm text-slate-500">
+      <header className="mb-6">
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">
+          {session.title}
+        </h1>
+        <p className="mt-1 text-sm text-muted">
           {new Date(session.createdAt).toLocaleString()}
           {duration && ` · ${duration}`}
         </p>
@@ -46,28 +58,33 @@ export default function Dashboard({ session }: { session: SessionDTO }) {
 
       {/* Mobile: tabs */}
       <div className="lg:hidden">
-        <div className="mb-3 flex gap-1 rounded-lg bg-slate-100 p-1" role="tablist">
-          {(["insights", "transcript"] as const).map((t) => (
+        <div className="mb-4 flex gap-1 rounded-xl border border-line bg-surface p-1" role="tablist">
+          {TABS.map((t) => (
             <button
-              key={t}
+              key={t.key}
               role="tab"
-              aria-selected={tab === t}
-              onClick={() => setTab(t)}
-              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium capitalize ${
-                tab === t ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+              aria-selected={tab === t.key}
+              onClick={() => setTab(t.key)}
+              className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                tab === t.key ? "bg-accent text-accent-fg" : "text-muted"
               }`}
             >
-              {t}
+              {t.label}
             </button>
           ))}
         </div>
-        {tab === "insights" ? insights : transcript}
+        {tab === "insights" && insights}
+        {tab === "people" && people}
+        {tab === "transcript" && transcript}
       </div>
 
-      {/* Desktop: side by side */}
+      {/* Desktop: transcript on the left, insights + people stacked on the right */}
       <div className="hidden gap-6 lg:grid lg:grid-cols-2 lg:items-start">
         {transcript}
-        {insights}
+        <div className="space-y-6">
+          {insights}
+          {people}
+        </div>
       </div>
     </div>
   );

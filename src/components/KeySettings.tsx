@@ -65,28 +65,28 @@ export default function KeySettings({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl"
+        className="w-full max-w-lg rounded-2xl border border-line bg-surface p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="API key settings"
       >
         <div className="mb-1 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">API keys</h2>
+          <h2 className="text-lg font-semibold text-ink">API keys</h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="text-slate-400 hover:text-slate-700"
+            className="text-faint hover:text-ink"
           >
             ✕
           </button>
         </div>
-        <p className="mb-5 text-xs text-slate-500">
+        <p className="mb-5 text-xs text-muted">
           Bring your own keys. They stay in this browser, are sent only with your
           own requests, and are never stored on the server. Add more than one to
           fail over when a key is rate-limited.
@@ -96,17 +96,17 @@ export default function KeySettings({
           {PROVIDERS.map(({ provider, label, hint, link }) => (
             <div key={provider}>
               <div className="mb-1 flex items-baseline justify-between">
-                <span className="text-sm font-medium text-slate-800">{label}</span>
+                <span className="text-sm font-medium text-ink">{label}</span>
                 <a
                   href={link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs text-slate-500 underline underline-offset-2 hover:text-slate-800"
+                  className="text-xs text-muted underline underline-offset-2 hover:text-ink"
                 >
                   Get a free key
                 </a>
               </div>
-              <p className="mb-2 text-xs text-slate-400">{hint}</p>
+              <p className="mb-2 text-xs text-faint">{hint}</p>
               <div className="space-y-2">
                 {keys[provider].map((val, i) => (
                   <div key={i} className="flex gap-2">
@@ -117,13 +117,13 @@ export default function KeySettings({
                       placeholder={`${label} key`}
                       autoComplete="off"
                       spellCheck={false}
-                      className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none"
+                      className="flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none"
                     />
                     <button
                       type="button"
                       onClick={() => remove(provider, i)}
                       aria-label="Remove key"
-                      className="rounded-lg border border-slate-200 px-3 text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+                      className="rounded-lg border border-line px-3 text-faint hover:bg-surface-2 hover:text-ink"
                     >
                       −
                     </button>
@@ -133,7 +133,7 @@ export default function KeySettings({
               <button
                 type="button"
                 onClick={() => add(provider)}
-                className="mt-2 text-xs font-medium text-slate-600 hover:text-slate-900"
+                className="mt-2 text-xs font-medium text-accent hover:opacity-80"
               >
                 + Add another key
               </button>
@@ -145,14 +145,14 @@ export default function KeySettings({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-2"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={save}
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-opacity hover:opacity-90"
           >
             Save keys
           </button>

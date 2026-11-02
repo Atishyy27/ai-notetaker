@@ -93,6 +93,8 @@ export default function Recorder({ onComplete, onStateChange, disabled = false }
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
     const data = new Uint8Array(analyser.frequencyBinCount);
+    const accent =
+      getComputedStyle(canvas).getPropertyValue("--accent").trim() || "#4f46e5";
 
     const render = () => {
       rafRef.current = requestAnimationFrame(render);
@@ -101,7 +103,7 @@ export default function Recorder({ onComplete, onStateChange, disabled = false }
       const bars = 48;
       const step = Math.floor(data.length / bars);
       const barWidth = canvas.width / bars;
-      ctx.fillStyle = "#0f172a";
+      ctx.fillStyle = accent;
       for (let i = 0; i < bars; i++) {
         const value = data[i * step] / 255;
         const h = Math.max(2, value * canvas.height);
@@ -182,16 +184,16 @@ export default function Recorder({ onComplete, onStateChange, disabled = false }
   const active = state !== "idle";
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-6">
+    <div className="rounded-2xl border border-line bg-surface p-6">
       <div className="flex flex-col items-center gap-4">
-        <div className="font-mono text-4xl tabular-nums text-slate-900">
+        <div className="font-mono text-4xl tabular-nums text-ink">
           {formatTime(elapsed)}
         </div>
         <canvas
           ref={canvasRef}
           width={480}
           height={64}
-          className={`h-16 w-full max-w-md rounded-lg bg-slate-50 ${active ? "" : "opacity-50"}`}
+          className={`h-16 w-full max-w-md rounded-lg bg-surface-2 ${active ? "" : "opacity-50"}`}
           aria-hidden="true"
         />
         <div className="flex gap-3">
@@ -209,14 +211,14 @@ export default function Recorder({ onComplete, onStateChange, disabled = false }
               <button
                 type="button"
                 onClick={togglePause}
-                className="rounded-lg border border-slate-300 px-5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                className="rounded-lg border border-line px-5 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-2"
               >
                 {state === "paused" ? "Resume" : "Pause"}
               </button>
               <button
                 type="button"
                 onClick={stop}
-                className="rounded-lg bg-slate-900 px-5 py-2 text-sm font-medium text-white hover:bg-slate-700"
+                className="rounded-lg bg-accent px-5 py-2 text-sm font-medium text-accent-fg transition-opacity hover:opacity-90"
               >
                 Stop
               </button>

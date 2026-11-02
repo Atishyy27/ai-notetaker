@@ -47,8 +47,6 @@ export default function HomePage() {
     setError(null);
     setState("uploading");
     try {
-      // The upload and transcription happen in one request; flip to
-      // "transcribing" right after the request is sent.
       const pending = transcribeAudio(src.blob);
       setState("transcribing");
       const { text, durationSec } = await pending;
@@ -76,18 +74,29 @@ export default function HomePage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
-      <nav className="mb-8 flex items-center justify-between">
-        <span className="text-lg font-semibold text-slate-900">AI Notetaker</span>
-        <div className="flex items-center gap-4">
+    <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-8">
+      <nav className="mb-10 flex items-center justify-between">
+        {/* Wordmark. "baithak" is the provisional name; swap here once it's locked. */}
+        <Link href="/" className="flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-accent-fg">
+            <span className="h-2.5 w-2.5 rounded-full bg-accent-fg" />
+          </span>
+          <span className="text-lg font-semibold tracking-tight text-ink">
+            baithak
+          </span>
+        </Link>
+        <div className="flex items-center gap-3 sm:gap-4">
           <StatusBadge state={state} />
-          <Link href="/sessions" className="text-sm text-slate-600 hover:text-slate-900">
+          <Link
+            href="/sessions"
+            className="text-sm text-muted transition-colors hover:text-ink"
+          >
             History
           </Link>
           <button
             type="button"
             onClick={() => setSettingsOpen(true)}
-            className="text-sm text-slate-600 hover:text-slate-900"
+            className="text-sm text-muted transition-colors hover:text-ink"
           >
             Keys
           </button>
@@ -95,7 +104,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={reset}
-              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="rounded-lg border border-line px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-2"
             >
               New session
             </button>
@@ -110,9 +119,9 @@ export default function HomePage() {
           <ProcessingView state={state} />
         </div>
       ) : state === "error" ? (
-        <div className="mx-auto max-w-xl rounded-xl border border-red-200 bg-red-50 p-6">
-          <h2 className="text-sm font-semibold text-red-800">Processing failed</h2>
-          <p role="alert" className="mt-1 text-sm text-red-700">
+        <div className="mx-auto max-w-xl rounded-2xl border border-red-500/20 bg-red-500/5 p-6">
+          <h2 className="text-sm font-semibold text-red-600">Processing failed</h2>
+          <p role="alert" className="mt-1 text-sm text-muted">
             {error}
           </p>
           <div className="mt-4 flex gap-3">
@@ -120,7 +129,7 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => void process(source)}
-                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+                className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-opacity hover:opacity-90"
               >
                 Retry
               </button>
@@ -128,7 +137,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={reset}
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-2"
             >
               Start over
             </button>
@@ -136,14 +145,17 @@ export default function HomePage() {
         </div>
       ) : (
         <div className="mx-auto max-w-xl">
-          <h1 className="mb-1 text-2xl font-semibold text-slate-900">New session</h1>
-          <p className="mb-1 text-sm text-slate-500">
-            Record a meeting or upload audio to get a transcript, summary and action items.
-          </p>
-          <p className="mb-6 text-xs text-slate-400">
-            Free tier: up to 25 MB per clip (~1-2 hrs recorded, ~25 min as MP3).
-          </p>
-          <div className="mb-4 flex gap-1 rounded-lg bg-slate-100 p-1" role="tablist">
+          <div className="mb-8 text-center">
+            <h1 className="text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
+              Turn any conversation into action
+            </h1>
+            <p className="mx-auto mt-3 max-w-md text-[15px] text-muted">
+              Record or upload a meeting. Get a clean transcript, a topic-wise
+              summary, and action items you can mail to each person.
+            </p>
+          </div>
+
+          <div className="mb-4 flex gap-1 rounded-xl border border-line bg-surface p-1" role="tablist">
             {(["record", "upload"] as const).map((m) => (
               <button
                 key={m}
@@ -151,14 +163,15 @@ export default function HomePage() {
                 aria-selected={mode === m}
                 disabled={state === "recording" || state === "paused"}
                 onClick={() => setMode(m)}
-                className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium capitalize disabled:cursor-not-allowed ${
-                  mode === m ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+                className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium capitalize transition-colors disabled:cursor-not-allowed ${
+                  mode === m ? "bg-accent text-accent-fg" : "text-muted hover:text-ink"
                 }`}
               >
                 {m}
               </button>
             ))}
           </div>
+
           {mode === "record" ? (
             <Recorder
               onStateChange={setState}
@@ -168,16 +181,20 @@ export default function HomePage() {
             <AudioUpload onSelect={(file) => void process({ blob: file, durationSec: null })} />
           )}
 
-          <div className="mt-6 border-t border-slate-200 pt-4 text-center">
+          <p className="mt-4 text-center text-xs text-faint">
+            Free tier: up to 25 MB per clip (~1–2 hrs recorded, ~25 min as MP3).
+          </p>
+
+          <div className="mt-8 border-t border-line pt-5 text-center">
             <button
               type="button"
               onClick={() => void openSample()}
               disabled={loadingSample || state === "recording" || state === "paused"}
-              className="text-sm font-medium text-slate-600 underline underline-offset-4 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+              className="text-sm font-medium text-accent underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loadingSample ? "Loading sample..." : "Or explore a sample session"}
+              {loadingSample ? "Loading sample…" : "Explore a sample session"}
             </button>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-faint">
               Pre-filled example data. No API key needed.
             </p>
           </div>

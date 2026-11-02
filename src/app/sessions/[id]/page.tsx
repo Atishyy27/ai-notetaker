@@ -22,7 +22,7 @@ export default async function SessionPage({
       <nav className="mb-6">
         <Link
           href="/sessions"
-          className="text-sm text-slate-600 hover:text-slate-900"
+          className="text-sm text-muted transition-colors hover:text-ink"
         >
           ← History
         </Link>

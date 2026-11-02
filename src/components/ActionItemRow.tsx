@@ -5,9 +5,9 @@ import { deleteAction, updateAction } from "@/lib/api";
 import type { ActionItemDTO } from "@/lib/types";
 
 const PRIORITY_STYLES: Record<string, string> = {
-  High: "bg-red-100 text-red-700",
-  Medium: "bg-amber-100 text-amber-700",
-  Low: "bg-slate-100 text-slate-600",
+  High: "bg-red-500/12 text-red-600",
+  Medium: "bg-amber-500/15 text-amber-600",
+  Low: "bg-ink/8 text-muted",
 };
 
 type Props = {
@@ -66,7 +66,7 @@ export default function ActionItemRow({ item, onChange, onDelete }: Props) {
   }
 
   return (
-    <li className="py-3">
+    <li className="group py-3">
       <div className="flex items-start gap-3">
         <input
           type="checkbox"
@@ -74,7 +74,7 @@ export default function ActionItemRow({ item, onChange, onDelete }: Props) {
           onChange={toggleDone}
           disabled={pending}
           aria-label={`Mark "${item.task}" as done`}
-          className="mt-1 h-4 w-4 cursor-pointer rounded border-slate-300"
+          className="mt-0.5 h-4 w-4 cursor-pointer rounded border-line accent-[var(--accent)]"
         />
         <div className="min-w-0 flex-1">
           {editing ? (
@@ -90,7 +90,7 @@ export default function ActionItemRow({ item, onChange, onDelete }: Props) {
                   setEditing(false);
                 }
               }}
-              className="w-full rounded border border-slate-300 px-2 py-1 text-sm focus:border-slate-900 focus:outline-none"
+              className="w-full rounded-lg border border-line bg-surface px-2.5 py-1.5 text-sm text-ink focus:border-accent focus:outline-none"
             />
           ) : (
             <button
@@ -99,15 +99,15 @@ export default function ActionItemRow({ item, onChange, onDelete }: Props) {
                 setDraft(item.task);
                 setEditing(true);
               }}
-              className={`w-full text-left text-sm hover:text-slate-600 ${
-                item.done ? "text-slate-400 line-through" : "text-slate-900"
+              className={`w-full text-left text-sm transition-colors hover:text-accent ${
+                item.done ? "text-faint line-through" : "text-ink"
               }`}
               title="Click to edit"
             >
               {item.task}
             </button>
           )}
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted">
             <span
               className={`rounded-full px-2 py-0.5 font-medium ${
                 PRIORITY_STYLES[item.priority] ?? PRIORITY_STYLES.Low
@@ -115,8 +115,8 @@ export default function ActionItemRow({ item, onChange, onDelete }: Props) {
             >
               {item.priority}
             </span>
-            {item.assignee && <span>{item.assignee}</span>}
-            {item.dueDate && <span>Due {item.dueDate}</span>}
+            {item.assignee && <span className="text-muted">{item.assignee}</span>}
+            {item.dueDate && <span className="text-faint">Due {item.dueDate}</span>}
           </div>
         </div>
         <button
@@ -124,7 +124,7 @@ export default function ActionItemRow({ item, onChange, onDelete }: Props) {
           onClick={remove}
           disabled={pending}
           aria-label={`Delete "${item.task}"`}
-          className="rounded px-1.5 text-lg leading-none text-slate-400 hover:text-red-600 disabled:opacity-50"
+          className="rounded px-1.5 text-lg leading-none text-faint opacity-0 transition-opacity hover:text-red-600 group-hover:opacity-100 disabled:opacity-50"
         >
           ×
         </button>

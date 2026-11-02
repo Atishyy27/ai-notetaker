@@ -1,19 +1,62 @@
 @import "tailwindcss";
 
+/* Design tokens. Light is a warm paper; dark is a true near-black. Every surface
+   class (bg-surface, text-ink, border-line, bg-accent…) reads from these, and the
+   values swap under prefers-color-scheme, so dark mode needs no `dark:` variants. */
 :root {
-  --background: #fafafa;
-  --foreground: #171717;
+  color-scheme: light dark;
+
+  --canvas: #f5f4f1;
+  --surface: #ffffff;
+  --surface-2: #faf9f6;
+  --ink: #18181b;
+  --muted: #6b7280;
+  --faint: #9aa0a6;
+  --line: #e9e6df;
+  --accent: #4f46e5;
+  --accent-fg: #ffffff;
+  --accent-soft: #eef0ff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --canvas: #0b0b0d;
+    --surface: #161619;
+    --surface-2: #1d1d21;
+    --ink: #f4f4f5;
+    --muted: #a1a1aa;
+    --faint: #6b7280;
+    --line: #2a2a2f;
+    --accent: #7c82f8;
+    --accent-fg: #0b0b0d;
+    --accent-soft: #1b1b3a;
+  }
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--canvas);
+  color: var(--ink);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--ink);
 }

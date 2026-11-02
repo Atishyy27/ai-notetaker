@@ -3,7 +3,7 @@ import type { CaptureState } from "@/lib/types";
 const STEPS: { state: CaptureState; label: string }[] = [
   { state: "uploading", label: "Uploading audio" },
   { state: "transcribing", label: "Transcribing" },
-  { state: "analyzing", label: "Analyzing" },
+  { state: "analyzing", label: "Finding action items" },
 ];
 
 export default function ProcessingView({ state }: { state: CaptureState }) {
@@ -11,11 +11,11 @@ export default function ProcessingView({ state }: { state: CaptureState }) {
 
   return (
     <div
-      className="rounded-xl border border-slate-200 bg-white p-6"
+      className="rounded-2xl border border-line bg-surface p-6"
       role="status"
       aria-live="polite"
     >
-      <ol className="space-y-3">
+      <ol className="space-y-3.5">
         {STEPS.map((step, i) => {
           const done = i < activeIndex;
           const active = i === activeIndex;
@@ -26,8 +26,8 @@ export default function ProcessingView({ state }: { state: CaptureState }) {
                   done
                     ? "bg-emerald-500 text-white"
                     : active
-                      ? "bg-slate-900 text-white"
-                      : "bg-slate-100 text-slate-400"
+                      ? "bg-accent text-accent-fg"
+                      : "bg-ink/6 text-faint"
                 }`}
               >
                 {done ? "✓" : active ? <Spinner /> : i + 1}
@@ -35,10 +35,10 @@ export default function ProcessingView({ state }: { state: CaptureState }) {
               <span
                 className={
                   active
-                    ? "font-medium text-slate-900"
+                    ? "font-medium text-ink"
                     : done
-                      ? "text-slate-600"
-                      : "text-slate-400"
+                      ? "text-muted"
+                      : "text-faint"
                 }
               >
                 {step.label}
@@ -49,9 +49,9 @@ export default function ProcessingView({ state }: { state: CaptureState }) {
         })}
       </ol>
       <div className="mt-6 space-y-2" aria-hidden="true">
-        <div className="h-3 w-3/4 animate-pulse rounded bg-slate-100" />
-        <div className="h-3 w-full animate-pulse rounded bg-slate-100" />
-        <div className="h-3 w-5/6 animate-pulse rounded bg-slate-100" />
+        <div className="h-3 w-3/4 animate-pulse rounded bg-ink/6" />
+        <div className="h-3 w-full animate-pulse rounded bg-ink/6" />
+        <div className="h-3 w-5/6 animate-pulse rounded bg-ink/6" />
       </div>
     </div>
   );
@@ -59,6 +59,6 @@ export default function ProcessingView({ state }: { state: CaptureState }) {
 
 function Spinner() {
   return (
-    <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+    <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
   );
 }

@@ -51,24 +51,34 @@ export default function AudioUpload({ onSelect, disabled = false }: Props) {
           setDragging(false);
           if (!disabled) handleFile(e.dataTransfer.files[0]);
         }}
-        className={`flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors ${
-          dragging ? "border-slate-900 bg-slate-50" : "border-slate-300 bg-white"
+        className={`flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-12 text-center transition-colors ${
+          dragging ? "border-accent bg-accent-soft" : "border-line bg-surface-2"
         } ${disabled ? "opacity-60" : ""}`}
       >
-        <p className="text-sm text-slate-600">
-          Drag and drop an audio file here, or
-        </p>
+        <svg
+          className="h-8 w-8 text-faint"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 16V4m0 0L8 8m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"
+          />
+        </svg>
+        <p className="text-sm text-muted">Drag and drop an audio file, or</p>
         <button
           type="button"
           disabled={disabled}
           onClick={() => inputRef.current?.click()}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Choose file
         </button>
-        <p className="text-xs text-slate-400">
-          MP3, WAV, M4A or WebM, up to 25MB
-        </p>
+        <p className="text-xs text-faint">MP3, WAV, M4A or WebM, up to 25MB</p>
         <input
           ref={inputRef}
           type="file"

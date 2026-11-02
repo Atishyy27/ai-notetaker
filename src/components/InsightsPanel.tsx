@@ -44,20 +44,22 @@ export default function InsightsPanel({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-xl border border-slate-200 bg-white">
-        <h2 className="border-b border-slate-200 px-4 py-3 text-sm font-semibold text-slate-900">
+      <section className="overflow-hidden rounded-2xl border border-line bg-surface">
+        <h2 className="border-b border-line px-5 py-3.5 text-sm font-semibold text-ink">
           Summary
         </h2>
-        <div className="space-y-4 p-4">
+        <div className="space-y-4 p-5">
           {summary.length === 0 && (
-            <p className="text-sm text-slate-400">No summary available.</p>
+            <p className="text-sm text-faint">No summary available.</p>
           )}
           {summary.map((topic) => (
             <div key={topic.topic}>
-              <h3 className="text-sm font-semibold text-slate-900">{topic.topic}</h3>
-              <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-slate-700">
+              <h3 className="text-sm font-semibold text-ink">{topic.topic}</h3>
+              <ul className="mt-1.5 space-y-1 pl-4 text-sm text-muted">
                 {topic.points.map((point, i) => (
-                  <li key={i}>{point}</li>
+                  <li key={i} className="list-disc">
+                    {point}
+                  </li>
                 ))}
               </ul>
             </div>
@@ -65,16 +67,16 @@ export default function InsightsPanel({
         </div>
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white">
-        <h2 className="border-b border-slate-200 px-4 py-3 text-sm font-semibold text-slate-900">
+      <section className="overflow-hidden rounded-2xl border border-line bg-surface">
+        <h2 className="border-b border-line px-5 py-3.5 text-sm font-semibold text-ink">
           Action items
-          <span className="ml-2 font-normal text-slate-400">{actionItems.length}</span>
+          <span className="ml-2 font-normal text-faint">{actionItems.length}</span>
         </h2>
-        <div className="px-4">
+        <div className="px-5">
           {actionItems.length === 0 ? (
-            <p className="py-4 text-sm text-slate-400">No action items yet.</p>
+            <p className="py-4 text-sm text-faint">No action items yet.</p>
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-line">
               {actionItems.map((item) => (
                 <ActionItemRow
                   key={item.id}
@@ -86,19 +88,19 @@ export default function InsightsPanel({
             </ul>
           )}
         </div>
-        <form onSubmit={handleAdd} className="border-t border-slate-200 p-4">
+        <form onSubmit={handleAdd} className="border-t border-line p-5">
           <div className="flex gap-2">
             <input
               value={task}
               onChange={(e) => setTask(e.target.value)}
               placeholder="Add a task"
               disabled={adding}
-              className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none disabled:opacity-60"
+              className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none disabled:opacity-60"
             />
             <button
               type="submit"
               disabled={adding || !task.trim()}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {adding ? "Adding…" : "Add task"}
             </button>
