@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     template: "%s · AI Notetaker",
   },
   description:
-    "Record or upload a meeting and get a clean transcript, a topic-wise summary, and tracked action items. Bring your own free API keys; nothing is stored on our servers.",
+    "Record or upload a meeting and get a clean transcript, a topic-wise summary, and tracked action items. Recordings and transcripts are saved so your sessions persist and the product improves.",
   keywords: [
     "meeting notes",
     "transcription",

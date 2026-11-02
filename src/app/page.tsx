@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import AudioUpload from "@/components/AudioUpload";
+import ConsentGate from "@/components/ConsentGate";
 import Dashboard from "@/components/Dashboard";
 import KeySettings from "@/components/KeySettings";
 import ProcessingView from "@/components/ProcessingView";
@@ -155,6 +156,7 @@ export default function HomePage() {
             </p>
           </div>
 
+          <ConsentGate>
           <div className="mb-4 flex gap-1 rounded-xl border border-line bg-surface p-1" role="tablist">
             {(
               [
@@ -198,6 +200,7 @@ export default function HomePage() {
           <p className="mt-4 text-center text-xs text-faint">
             Free tier: up to 25 MB per clip (~1–2 hrs recorded, ~25 min as MP3).
           </p>
+          </ConsentGate>
 
           <div className="mt-8 border-t border-line pt-5 text-center">
             <button
