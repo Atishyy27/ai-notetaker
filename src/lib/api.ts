@@ -6,6 +6,8 @@ import type {
 } from "./types";
 import { keyHeader } from "./keys";
 import { getSttConfig } from "./stt-config";
+import { toWav16kMono } from "./audio/wav";
+import { GNANI_MAX_SECONDS } from "./audio/limits";
 
 // Client-side fetch helpers. Each throws an Error carrying the server's message
 // so the UI can show the specific failure (rate limit, bad audio, etc.).
@@ -28,18 +30,25 @@ export async function transcribeAudio(
   file: Blob,
   language?: string,
 ): Promise<{ text: string; durationSec: number | null }> {
+  const stt = getSttConfig();
   const form = new FormData();
-  const name = file instanceof File ? file.name : "recording.webm";
-  form.append("audio", file, name);
+  if (stt.provider === "gnani") {
+    // Gnani's REST endpoint takes up to 30 s and no webm: send 16 kHz mono WAV.
+    form.append("audio", await toWav16kMono(file, GNANI_MAX_SECONDS), "recording.wav");
+  } else {
+    const name = file instanceof File ? file.name : "recording.webm";
+    form.append("audio", file, name);
+  }
   if (language) form.append("language", language);
 
   const headers: Record<string, string> = { "x-groq-key": keyHeader("groq") };
-  const stt = getSttConfig();
   if (stt.provider === "custom") {
     headers["x-stt-provider"] = "custom";
     if (stt.baseUrl) headers["x-stt-base-url"] = stt.baseUrl;
     if (stt.model) headers["x-stt-model"] = stt.model;
     if (stt.key) headers["x-stt-key"] = stt.key;
+  } else if (stt.provider === "gnani") {
+    headers["x-stt-provider"] = "gnani";
   }
 
   const res = await fetch("/api/transcribe", {

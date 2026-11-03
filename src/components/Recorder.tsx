@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getSttConfig } from "@/lib/stt-config";
+import { GNANI_MAX_SECONDS } from "@/lib/audio/limits";
 
 type RecState = "idle" | "recording" | "paused";
 type Source = "mic" | "meeting";
@@ -51,6 +53,7 @@ export default function Recorder({
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const elapsedRef = useRef(0);
+  const capRef = useRef<number | null>(null);
   const onCompleteRef = useRef(onComplete);
 
   useEffect(() => {
@@ -94,6 +97,7 @@ export default function Recorder({
     timerRef.current = setInterval(() => {
       elapsedRef.current += 1;
       setElapsed(elapsedRef.current);
+      if (capRef.current !== null && elapsedRef.current >= capRef.current) stop();
     }, 1000);
   }
 
@@ -205,6 +209,7 @@ export default function Recorder({
 
       elapsedRef.current = 0;
       setElapsed(0);
+      capRef.current = getSttConfig().provider === "gnani" ? GNANI_MAX_SECONDS : null;
       recorder.start();
       startTimer();
       drawVisualizer(analyser);

@@ -166,6 +166,7 @@ export default function KeySettings({
           >
             <option value="groq">Groq Whisper (default)</option>
             <option value="custom">Custom (OpenAI-compatible)</option>
+            <option value="gnani">Gnani Prisma (clips up to 25 s)</option>
           </select>
           {stt.provider === "custom" && (
             <div className="mt-3 space-y-2">

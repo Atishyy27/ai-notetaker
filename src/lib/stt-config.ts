@@ -2,7 +2,7 @@
 // model and key live only in the user's browser (localStorage) and are sent
 // per-request as headers; they are never stored on the server.
 
-export type SttProviderId = "groq" | "custom";
+export type SttProviderId = "groq" | "custom" | "gnani";
 
 export type SttClientConfig = {
   provider: SttProviderId;
@@ -24,7 +24,7 @@ export function getSttConfig(): SttClientConfig {
   try {
     const raw = localStorage.getItem(LS_KEY);
     const p = raw ? (JSON.parse(raw) as Partial<SttClientConfig>) : null;
-    if (p && (p.provider === "custom" || p.provider === "groq")) {
+    if (p && (p.provider === "custom" || p.provider === "groq" || p.provider === "gnani")) {
       return {
         provider: p.provider,
         baseUrl: typeof p.baseUrl === "string" ? p.baseUrl : "",
