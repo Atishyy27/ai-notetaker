@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { addActionItem } from "@/lib/db";
 import { PRIORITIES } from "@/lib/schema";
 
@@ -5,6 +6,10 @@ type Ctx = { params: Promise<{ id: string }> };
 
 // Manually add an action item to a session (the "add a new task" requirement).
 export async function POST(req: Request, { params }: Ctx) {
+  const { userId } = await auth();
+  if (!userId) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const { id } = await params;
 
   let body: Record<string, unknown>;
@@ -25,15 +30,19 @@ export async function POST(req: Request, { params }: Ctx) {
       ? body.priority
       : "Medium";
 
-  const item = await addActionItem(id, {
-    task,
-    assignee:
-      typeof body.assignee === "string" && body.assignee.trim()
-        ? body.assignee.trim()
-        : "Unassigned",
-    dueDate: typeof body.dueDate === "string" ? body.dueDate : null,
-    priority,
-  });
+  const item = await addActionItem(
+    id,
+    {
+      task,
+      assignee:
+        typeof body.assignee === "string" && body.assignee.trim()
+          ? body.assignee.trim()
+          : "Unassigned",
+      dueDate: typeof body.dueDate === "string" ? body.dueDate : null,
+      priority,
+    },
+    userId,
+  );
 
   if (!item) {
     return Response.json({ error: "Session not found." }, { status: 404 });

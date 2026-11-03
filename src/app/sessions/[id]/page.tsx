@@ -1,11 +1,13 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
 import Dashboard from "@/components/Dashboard";
 import { getSession } from "@/lib/db";
 
 // A per-session page reads user data at request time, so it is dynamic, not
 // prerendered. The server reads the store directly and hands the session to the
-// client Dashboard, so there is no extra client fetch here.
+// client Dashboard, so there is no extra client fetch here. The session is
+// scoped to the signed-in user, so one account can never open another's.
 export const instant = false;
 
 export default async function SessionPage({
@@ -13,8 +15,10 @@ export default async function SessionPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const { userId } = await auth();
+  if (!userId) redirect("/");
   const { id } = await params;
-  const session = await getSession(id);
+  const session = await getSession(id, userId);
   if (!session) notFound();
 
   return (

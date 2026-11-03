@@ -8,22 +8,13 @@ import type {
   SummaryTopic,
 } from "./types";
 
-// Minimal persistence: one JSON file. Zero-setup and reliable for a single
-// instance. The whole storage layer lives behind this module, so moving to
-// Postgres later changes only this file, not the routes.
+// JSON-file store for local dev + tests (Neon is the deploy path). Same
+// ownership rule as db-neon.ts: every session carries a userId and every read
+// and write is filtered by it, so the two backends behave identically.
 //
-// Two correctness properties this file guarantees, because a plain
-// read-modify-writeFile has neither:
-//   1. No lost updates. Every operation runs inside a serialised critical
-//      section (`withLock`), so two concurrent requests can never read the same
-//      snapshot and clobber each other's change.
-//   2. No torn/corrupt file. Writes go to a temp file and are atomically
-//      renamed into place, so a crash mid-write leaves the previous good file
-//      intact, never a half-written one. Lock-free readers see old-or-new, never
-//      partial.
+// Atomicity/concurrency properties (unchanged): a serialised lock prevents lost
+// updates, and temp-file+rename prevents torn files.
 
-// Resolved per call so the data location can be overridden (tests, deploys)
-// via env without reloading the module.
 function dataFile(): string {
   return (
     process.env.AINOTE_DATA_FILE ??
@@ -31,14 +22,10 @@ function dataFile(): string {
   );
 }
 
-type Store = { sessions: SessionDTO[] };
+// Stored sessions carry the owner; the DTO handed back to callers does not.
+type Stored = SessionDTO & { userId: string };
+type Store = { sessions: Stored[] };
 
-// Serverless filesystems (Vercel and friends) are read-only apart from /tmp and
-// give no persistent disk. If a write ever hits a read-only FS we switch to an
-// in-process store so the app keeps working for that instance's lifetime instead
-// of returning a 500. This is per-instance and ephemeral: real cross-request
-// persistence is the job of a database (the deploy path). Local dev and tests,
-// which have a writable disk, keep using the JSON file untouched.
 let memory: Store | null = null;
 
 function isReadOnlyFsError(err: unknown): boolean {
@@ -46,8 +33,6 @@ function isReadOnlyFsError(err: unknown): boolean {
   return code === "EROFS" || code === "EACCES" || code === "EPERM";
 }
 
-// Promise-chain mutex. Each op is appended to the chain and runs only after the
-// previous one settles, regardless of whether it resolved or rejected.
 let chain: Promise<unknown> = Promise.resolve();
 function withLock<T>(fn: () => Promise<T>): Promise<T> {
   const run = chain.then(fn, fn);
@@ -82,12 +67,18 @@ async function write(store: Store): Promise<void> {
     await fs.rename(tmp, file);
   } catch (err) {
     if (isReadOnlyFsError(err)) {
-      // First write on a read-only FS: adopt the in-process store from here on.
       memory = { sessions: store.sessions.slice() };
       return;
     }
     throw err;
   }
+}
+
+// Drop the internal userId before handing a session to a caller.
+function toDTO(s: Stored): SessionDTO {
+  const { userId: _userId, ...dto } = s;
+  void _userId;
+  return dto;
 }
 
 export type NewActionItem = {
@@ -97,17 +88,21 @@ export type NewActionItem = {
   priority: string;
 };
 
-export function createSession(input: {
-  title: string;
-  transcript: string;
-  summary: SummaryTopic[];
-  durationSec: number | null;
-  actionItems: NewActionItem[];
-}): Promise<SessionDTO> {
+export function createSession(
+  input: {
+    title: string;
+    transcript: string;
+    summary: SummaryTopic[];
+    durationSec: number | null;
+    actionItems: NewActionItem[];
+  },
+  userId: string,
+): Promise<SessionDTO> {
   return withLock(async () => {
     const store = await read();
-    const session: SessionDTO = {
+    const session: Stored = {
       id: randomUUID(),
+      userId,
       title: input.title,
       createdAt: new Date().toISOString(),
       transcript: input.transcript,
@@ -124,15 +119,15 @@ export function createSession(input: {
     };
     store.sessions.unshift(session);
     await write(store);
-    return session;
+    return toDTO(session);
   });
 }
 
-export function listSessions(): Promise<SessionListItem[]> {
+export function listSessions(userId: string): Promise<SessionListItem[]> {
   return withLock(async () => {
     const store = await read();
     return store.sessions
-      .slice()
+      .filter((s) => s.userId === userId)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       .map((s) => ({
         id: s.id,
@@ -144,18 +139,24 @@ export function listSessions(): Promise<SessionListItem[]> {
   });
 }
 
-export function getSession(id: string): Promise<SessionDTO | null> {
+export function getSession(
+  id: string,
+  userId: string,
+): Promise<SessionDTO | null> {
   return withLock(async () => {
     const store = await read();
-    return store.sessions.find((s) => s.id === id) ?? null;
+    const s = store.sessions.find((s) => s.id === id && s.userId === userId);
+    return s ? toDTO(s) : null;
   });
 }
 
-export function deleteSession(id: string): Promise<boolean> {
+export function deleteSession(id: string, userId: string): Promise<boolean> {
   return withLock(async () => {
     const store = await read();
     const before = store.sessions.length;
-    store.sessions = store.sessions.filter((s) => s.id !== id);
+    store.sessions = store.sessions.filter(
+      (s) => !(s.id === id && s.userId === userId),
+    );
     if (store.sessions.length === before) return false;
     await write(store);
     return true;
@@ -165,10 +166,13 @@ export function deleteSession(id: string): Promise<boolean> {
 export function addActionItem(
   sessionId: string,
   item: NewActionItem,
+  userId: string,
 ): Promise<ActionItemDTO | null> {
   return withLock(async () => {
     const store = await read();
-    const session = store.sessions.find((s) => s.id === sessionId);
+    const session = store.sessions.find(
+      (s) => s.id === sessionId && s.userId === userId,
+    );
     if (!session) return null;
     const created: ActionItemDTO = {
       id: randomUUID(),
@@ -189,10 +193,12 @@ export function updateActionItem(
   patch: Partial<
     Pick<ActionItemDTO, "task" | "assignee" | "dueDate" | "priority" | "done">
   >,
+  userId: string,
 ): Promise<ActionItemDTO | null> {
   return withLock(async () => {
     const store = await read();
     for (const s of store.sessions) {
+      if (s.userId !== userId) continue;
       const item = s.actionItems.find((a) => a.id === id);
       if (item) {
         if (patch.task !== undefined) item.task = patch.task;
@@ -208,10 +214,11 @@ export function updateActionItem(
   });
 }
 
-export function deleteActionItem(id: string): Promise<boolean> {
+export function deleteActionItem(id: string, userId: string): Promise<boolean> {
   return withLock(async () => {
     const store = await read();
     for (const s of store.sessions) {
+      if (s.userId !== userId) continue;
       const idx = s.actionItems.findIndex((a) => a.id === id);
       if (idx !== -1) {
         s.actionItems.splice(idx, 1);

@@ -1,6 +1,11 @@
+import { auth } from "@clerk/nextjs/server";
 import { listSessions } from "@/lib/db";
 
-// History list: newest first, with an action-item count per session.
+// History list: the signed-in user's sessions, newest first.
 export async function GET() {
-  return Response.json(await listSessions());
+  const { userId } = await auth();
+  if (!userId) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return Response.json(await listSessions(userId));
 }

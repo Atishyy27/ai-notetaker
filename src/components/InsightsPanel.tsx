@@ -12,6 +12,8 @@ type Props = {
   onItemChange: (item: ActionItemDTO) => void;
   onItemDelete: (id: string) => void;
   onItemAdd: (item: ActionItemDTO) => void;
+  // The public sample passes this: render static, no server writes.
+  readOnly?: boolean;
 };
 
 export default function InsightsPanel({
@@ -21,6 +23,7 @@ export default function InsightsPanel({
   onItemChange,
   onItemDelete,
   onItemAdd,
+  readOnly = false,
 }: Props) {
   const [task, setTask] = useState("");
   const [adding, setAdding] = useState(false);
@@ -92,33 +95,36 @@ export default function InsightsPanel({
                   item={item}
                   onChange={onItemChange}
                   onDelete={onItemDelete}
+                  readOnly={readOnly}
                 />
               ))}
             </ul>
           )}
         </div>
-        <form onSubmit={handleAdd} className="border-t border-line p-4">
-          <div className="flex gap-2">
-            <input
-              value={task}
-              onChange={(e) => setTask(e.target.value)}
-              placeholder="Add a task…"
-              disabled={adding}
-              className="field flex-1 disabled:opacity-60"
-            />
-            <button type="submit" disabled={adding || !task.trim()} className="btn btn-primary px-4 py-2">
-              {adding ? "Adding…" : "Add"}
-            </button>
-          </div>
-          <p className="mt-2 flex items-center gap-1.5 text-xs text-faint">
-            Press <kbd>↵</kbd> to add a task
-          </p>
-          {error && (
-            <p role="alert" className="mt-1 text-xs text-red-600">
-              {error}
+        {!readOnly && (
+          <form onSubmit={handleAdd} className="border-t border-line p-4">
+            <div className="flex gap-2">
+              <input
+                value={task}
+                onChange={(e) => setTask(e.target.value)}
+                placeholder="Add a task…"
+                disabled={adding}
+                className="field flex-1 disabled:opacity-60"
+              />
+              <button type="submit" disabled={adding || !task.trim()} className="btn btn-primary px-4 py-2">
+                {adding ? "Adding…" : "Add"}
+              </button>
+            </div>
+            <p className="mt-2 flex items-center gap-1.5 text-xs text-faint">
+              Press <kbd>↵</kbd> to add a task
             </p>
-          )}
-        </form>
+            {error && (
+              <p role="alert" className="mt-1 text-xs text-red-600">
+                {error}
+              </p>
+            )}
+          </form>
+        )}
       </section>
     </div>
   );

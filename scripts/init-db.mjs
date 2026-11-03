@@ -13,6 +13,7 @@ const sql = neon(url);
 await sql`
   CREATE TABLE IF NOT EXISTS sessions (
     id uuid PRIMARY KEY,
+    user_id text,
     title text NOT NULL,
     created_at text NOT NULL,
     transcript text NOT NULL,
@@ -20,6 +21,10 @@ await sql`
     summary jsonb NOT NULL DEFAULT '[]'::jsonb,
     audio_url text
   )`;
+
+// Migrate an existing table (added when accounts landed). Idempotent.
+await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS user_id text`;
+await sql`CREATE INDEX IF NOT EXISTS sessions_user_idx ON sessions (user_id)`;
 
 await sql`
   CREATE TABLE IF NOT EXISTS action_items (

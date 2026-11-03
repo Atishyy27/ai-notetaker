@@ -1,4 +1,5 @@
-import { createSession } from "@/lib/db";
+import { randomUUID } from "crypto";
+import type { SessionDTO } from "@/lib/types";
 import {
   SAMPLE_TITLE,
   SAMPLE_TRANSCRIPT,
@@ -7,15 +8,26 @@ import {
   SAMPLE_DURATION_SEC,
 } from "@/lib/sample";
 
-// Seeds one clearly-labelled sample session so the app is explorable without
-// API keys. It only writes fixture data to the store; it does not call the AI.
+// The sample is a public, no-login, read-only preview so anyone can see the
+// dashboard without an account. It is built in memory and never persisted, so it
+// has no owner and never appears in anyone's history. Editing is disabled on the
+// client (preview mode) since there is no row to write to.
 export async function POST() {
-  const session = await createSession({
+  const session: SessionDTO = {
+    id: `sample-${randomUUID()}`,
     title: SAMPLE_TITLE,
+    createdAt: new Date().toISOString(),
     transcript: SAMPLE_TRANSCRIPT,
-    summary: SAMPLE_SUMMARY,
     durationSec: SAMPLE_DURATION_SEC,
-    actionItems: SAMPLE_ACTION_ITEMS,
-  });
+    summary: SAMPLE_SUMMARY,
+    actionItems: SAMPLE_ACTION_ITEMS.map((a) => ({
+      id: randomUUID(),
+      task: a.task,
+      assignee: a.assignee,
+      dueDate: a.dueDate,
+      priority: a.priority,
+      done: false,
+    })),
+  };
   return Response.json(session, { status: 201 });
 }

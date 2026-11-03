@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { updateActionItem, deleteActionItem } from "@/lib/db";
 import { PRIORITIES } from "@/lib/schema";
 
@@ -5,6 +6,10 @@ type Ctx = { params: Promise<{ id: string }> };
 
 // Toggle done, edit task text, reassign, change due/priority.
 export async function PATCH(req: Request, { params }: Ctx) {
+  const { userId } = await auth();
+  if (!userId) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const { id } = await params;
 
   let body: Record<string, unknown>;
@@ -39,7 +44,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
     return Response.json({ error: "No valid fields to update." }, { status: 400 });
   }
 
-  const item = await updateActionItem(id, patch);
+  const item = await updateActionItem(id, patch, userId);
   if (!item) {
     return Response.json({ error: "Action item not found." }, { status: 404 });
   }
@@ -47,8 +52,12 @@ export async function PATCH(req: Request, { params }: Ctx) {
 }
 
 export async function DELETE(_req: Request, { params }: Ctx) {
+  const { userId } = await auth();
+  if (!userId) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const { id } = await params;
-  const ok = await deleteActionItem(id);
+  const ok = await deleteActionItem(id, userId);
   if (!ok) {
     return Response.json({ error: "Action item not found." }, { status: 404 });
   }

@@ -31,7 +31,14 @@ function formatDate(iso: string): string {
   });
 }
 
-export default function Dashboard({ session }: { session: SessionDTO }) {
+export default function Dashboard({
+  session,
+  preview = false,
+}: {
+  session: SessionDTO;
+  // The public sample is a read-only preview: no server-backed edits.
+  preview?: boolean;
+}) {
   const [items, setItems] = useState<ActionItemDTO[]>(session.actionItems);
   const [tab, setTab] = useState<Tab>("insights");
 
@@ -44,6 +51,7 @@ export default function Dashboard({ session }: { session: SessionDTO }) {
       sessionId={session.id}
       summary={session.summary}
       actionItems={items}
+      readOnly={preview}
       onItemChange={(updated) =>
         setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)))
       }

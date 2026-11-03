@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { analyzeTranscript } from "@/lib/ai";
 import { createSession } from "@/lib/db";
 import { mapAiError } from "@/lib/http";
@@ -10,6 +11,11 @@ function defaultTitle(): string {
 }
 
 export async function POST(req: Request) {
+  const { userId } = await auth();
+  if (!userId) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   let body: Record<string, unknown>;
   try {
     body = (await req.json()) as Record<string, unknown>;
@@ -45,18 +51,21 @@ export async function POST(req: Request) {
       ? analysis.title.trim()
       : defaultTitle());
 
-  const session = await createSession({
-    title,
-    transcript,
-    summary: analysis.summary,
-    durationSec,
-    actionItems: analysis.actionItems.map((a) => ({
-      task: a.task,
-      assignee: a.assignee,
-      dueDate: a.dueDate,
-      priority: a.priority,
-    })),
-  });
+  const session = await createSession(
+    {
+      title,
+      transcript,
+      summary: analysis.summary,
+      durationSec,
+      actionItems: analysis.actionItems.map((a) => ({
+        task: a.task,
+        assignee: a.assignee,
+        dueDate: a.dueDate,
+        priority: a.priority,
+      })),
+    },
+    userId,
+  );
 
   return Response.json(session, { status: 201 });
 }

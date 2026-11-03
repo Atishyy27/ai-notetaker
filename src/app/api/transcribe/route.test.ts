@@ -7,6 +7,12 @@ vi.mock("@/lib/ai", () => ({
   transcribeAudio: vi.fn(),
 }));
 
+// Transcribe now requires a signed-in user; these tests exercise the signed-in
+// path, so auth() is stubbed to return a user id.
+vi.mock("@clerk/nextjs/server", () => ({
+  auth: vi.fn(async () => ({ userId: "test_user" })),
+}));
+
 import { POST } from "./route";
 import { transcribeAudio } from "@/lib/ai";
 

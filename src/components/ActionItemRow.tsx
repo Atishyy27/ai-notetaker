@@ -15,9 +15,12 @@ type Props = {
   item: ActionItemDTO;
   onChange: (item: ActionItemDTO) => void;
   onDelete: (id: string) => void;
+  // Read-only is used by the public sample preview: no server writes, so the
+  // row renders static (no toggle, edit, or delete).
+  readOnly?: boolean;
 };
 
-export default function ActionItemRow({ item, onChange, onDelete }: Props) {
+export default function ActionItemRow({ item, onChange, onDelete, readOnly = false }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(item.task);
   const [pending, setPending] = useState(false);
@@ -76,12 +79,20 @@ export default function ActionItemRow({ item, onChange, onDelete }: Props) {
           type="checkbox"
           checked={item.done}
           onChange={toggleDone}
-          disabled={pending}
+          disabled={pending || readOnly}
           aria-label={`Mark "${item.task}" as done`}
-          className="mt-0.5 h-4 w-4 cursor-pointer rounded border-line accent-[var(--accent)]"
+          className="mt-0.5 h-4 w-4 cursor-pointer rounded border-line accent-[var(--accent)] disabled:cursor-default"
         />
         <div className="min-w-0 flex-1">
-          {editing ? (
+          {readOnly ? (
+            <span
+              className={`block text-sm leading-snug ${
+                item.done ? "text-faint line-through" : "text-ink"
+              }`}
+            >
+              {item.task}
+            </span>
+          ) : editing ? (
             <input
               autoFocus
               value={draft}
@@ -137,17 +148,19 @@ export default function ActionItemRow({ item, onChange, onDelete }: Props) {
             )}
           </div>
         </div>
-        <button
-          type="button"
-          onClick={remove}
-          disabled={pending}
-          aria-label={`Delete "${item.task}"`}
-          className="rounded p-1 text-faint opacity-0 transition-opacity hover:text-red-600 group-hover:opacity-100 disabled:opacity-50"
-        >
-          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-            <path d="M6 6l12 12M18 6L6 18" />
-          </svg>
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={remove}
+            disabled={pending}
+            aria-label={`Delete "${item.task}"`}
+            className="rounded p-1 text-faint opacity-0 transition-opacity hover:text-red-600 group-hover:opacity-100 disabled:opacity-50"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        )}
       </div>
       {error && (
         <p role="alert" className="mt-1 pl-7 text-xs text-red-600">
