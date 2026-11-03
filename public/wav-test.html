@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WAV check</title>
+<style>
+  body { font: 16px/1.5 system-ui, sans-serif; margin: 0; padding: 16px; background: #faf8f4; color: #1d1b18; }
+  button { font: inherit; padding: 12px 18px; border-radius: 10px; border: 0; background: #3b3fd8; color: #fff; width: 100%; margin: 6px 0; }
+  button:disabled { background: #a9a9c9; }
+  pre { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 12px; white-space: pre-wrap; word-break: break-word; font-size: 14px; }
+  .pass { color: #0a7a2f; font-weight: 600; } .fail { color: #b3261e; font-weight: 600; }
+  audio { width: 100%; margin-top: 8px; }
+</style>
+</head>
+<body>
+<h2>Recording to WAV check</h2>
+<p>Tap Record, say one sentence in Hinglish, tap Stop (auto-stops at 25 s). Then send a screenshot of the result.</p>
+<button id="rec">Record</button>
+<button id="stop" disabled>Stop</button>
+<pre id="out">Waiting.</pre>
+<audio id="play" controls hidden></audio>
+<a id="dl" hidden download="check.wav">Download the WAV</a>
+<script>
+// Mirrors src/lib/audio/wav.ts (toWav16kMono + encodeWav) so it runs with no build step.
+const RATE = 16000, CAP = 25;
+const out = document.getElementById("out");
+const log = (s) => { out.textContent += "\n" + s; };
+let rec, chunks, timer, t0;
+
+function encodeWav(samples, sampleRate) {
+  const buf = new ArrayBuffer(44 + samples.length * 2), v = new DataView(buf);
+  const ascii = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  ascii(0, "RIFF"); v.setUint32(4, 36 + samples.length * 2, true); ascii(8, "WAVE"); ascii(12, "fmt ");
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, sampleRate, true);
+  v.setUint32(28, sampleRate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  ascii(36, "data"); v.setUint32(40, samples.length * 2, true);
+  for (let i = 0, o = 44; i < samples.length; i++, o += 2) {
+    const s = Math.max(-1, Math.min(1, samples[i])); v.setInt16(o, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+  }
+  return new Uint8Array(buf);
+}
+
+async function toWav(blob) {
+  const ctx = new AudioContext();
+  const decoded = await ctx.decodeAudioData(await blob.arrayBuffer());
+  ctx.close();
+  log(`decoded: ${decoded.sampleRate} Hz, ${decoded.numberOfChannels} ch, ${decoded.duration.toFixed(2)} s`);
+  const mono = new Float32Array(decoded.length);
+  for (let c = 0; c < decoded.numberOfChannels; c++) {
+    const d = decoded.getChannelData(c);
+    for (let i = 0; i < mono.length; i++) mono[i] += d[i] / decoded.numberOfChannels;
+  }
+  const frames = Math.max(1, Math.ceil(Math.min(decoded.duration, CAP) * RATE));
+  const off = new OfflineAudioContext(1, frames, RATE);
+  const src = off.createBuffer(1, mono.length, decoded.sampleRate);
+  src.getChannelData(0).set(mono);
+  const node = off.createBufferSource(); node.buffer = src; node.connect(off.destination); node.start();
+  const r = await off.startRendering();
+  return encodeWav(r.getChannelData(0), RATE);
+}
+
+async function check(bytes) {
+  const v = new DataView(bytes.buffer);
+  const rate = v.getUint32(24, true), ch = v.getUint16(22, true), bits = v.getUint16(34, true);
+  const secs = v.getUint32(40, true) / (rate * 2);
+  let peak = 0; for (let o = 44; o < bytes.length; o += 2) peak = Math.max(peak, Math.abs(v.getInt16(o, true)));
+  // Round-trip: the browser must be able to decode the file we wrote.
+  const ctx = new AudioContext(); let reread = "no";
+  try { const b = await ctx.decodeAudioData(bytes.slice().buffer); reread = `yes (${b.duration.toFixed(2)} s)`; } catch (e) { reread = "NO: " + e.message; }
+  ctx.close();
+  log(`wav: ${rate} Hz, ${ch} ch, ${bits}-bit, ${secs.toFixed(2)} s, ${(bytes.length / 1024).toFixed(0)} KB, peak ${peak}/32767`);
+  log(`browser re-decodes it: ${reread}`);
+  const ok = rate === 16000 && ch === 1 && bits === 16 && secs > 0.5 && secs <= 25.01 && peak > 300 && reread.startsWith("yes");
+  out.insertAdjacentHTML("beforeend", `\n<span class="${ok ? "pass" : "fail"}">${ok ? "PASS" : "FAIL"}</span>`);
+}
+
+document.getElementById("rec").onclick = async () => {
+  out.textContent = `UA: ${navigator.userAgent}`;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
+    log(`recorder mime: ${mime || "(browser default)"}`);
+    rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined); chunks = [];
+    rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+    rec.onstop = async () => {
+      clearInterval(timer); stream.getTracks().forEach((t) => t.stop());
+      const blob = new Blob(chunks, { type: rec.mimeType });
+      log(`recorded: ${rec.mimeType}, ${(blob.size / 1024).toFixed(0)} KB, ${((Date.now() - t0) / 1000).toFixed(1)} s`);
+      try {
+        const bytes = await toWav(blob);
+        await check(bytes);
+        const url = URL.createObjectURL(new Blob([bytes], { type: "audio/wav" }));
+        const a = document.getElementById("play"); a.src = url; a.hidden = false;
+        const dl = document.getElementById("dl"); dl.href = url; dl.hidden = false;
+      } catch (e) { log("conversion error: " + e.message); out.insertAdjacentHTML("beforeend", '\n<span class="fail">FAIL</span>'); }
+      document.getElementById("rec").disabled = false; document.getElementById("stop").disabled = true;
+    };
+    rec.start(); t0 = Date.now();
+    timer = setInterval(() => { if ((Date.now() - t0) / 1000 >= CAP) rec.stop(); }, 250);
+    document.getElementById("rec").disabled = true; document.getElementById("stop").disabled = false;
+  } catch (e) { log("mic error: " + e.message); }
+};
+document.getElementById("stop").onclick = () => rec && rec.state !== "inactive" && rec.stop();
+</script>
+</body>
+</html>
