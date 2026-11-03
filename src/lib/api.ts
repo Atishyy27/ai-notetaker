@@ -5,6 +5,7 @@ import type {
   Priority,
 } from "./types";
 import { keyHeader } from "./keys";
+import { getSttConfig } from "./stt-config";
 
 // Client-side fetch helpers. Each throws an Error carrying the server's message
 // so the UI can show the specific failure (rate limit, bad audio, etc.).
@@ -32,10 +33,19 @@ export async function transcribeAudio(
   form.append("audio", file, name);
   if (language) form.append("language", language);
 
+  const headers: Record<string, string> = { "x-groq-key": keyHeader("groq") };
+  const stt = getSttConfig();
+  if (stt.provider === "custom") {
+    headers["x-stt-provider"] = "custom";
+    if (stt.baseUrl) headers["x-stt-base-url"] = stt.baseUrl;
+    if (stt.model) headers["x-stt-model"] = stt.model;
+    if (stt.key) headers["x-stt-key"] = stt.key;
+  }
+
   const res = await fetch("/api/transcribe", {
     method: "POST",
     body: form,
-    headers: { "x-groq-key": keyHeader("groq") },
+    headers,
   });
   return jsonOrThrow(res);
 }

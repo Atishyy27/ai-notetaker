@@ -52,10 +52,23 @@ export async function POST(req: Request) {
 
   const language = (form.get("language") as string | null) || undefined;
   const keys = parseKeys(req.headers.get("x-groq-key"));
+  // STT provider selection (default groq). A custom provider carries its own
+  // endpoint/model/key via these headers; they are never stored server-side.
+  const provider = req.headers.get("x-stt-provider") || undefined;
+  const baseUrl = req.headers.get("x-stt-base-url") || undefined;
+  const model = req.headers.get("x-stt-model") || undefined;
+  const apiKey = req.headers.get("x-stt-key") || undefined;
 
   try {
     const bytes = new Uint8Array(await file.arrayBuffer());
-    const result = await transcribeAudio(bytes, { language, keys });
+    const result = await transcribeAudio(bytes, {
+      provider,
+      language,
+      keys,
+      apiKey,
+      baseUrl,
+      model,
+    });
     if (!result.text.trim()) {
       return Response.json(
         { error: "No speech was detected in the audio." },

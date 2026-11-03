@@ -2,6 +2,12 @@
 
 import { useState } from "react";
 import { getKeys, setKeys, type Provider } from "@/lib/keys";
+import {
+  getSttConfig,
+  setSttConfig,
+  type SttClientConfig,
+  type SttProviderId,
+} from "@/lib/stt-config";
 
 type Meta = { provider: Provider; label: string; hint: string; link: string };
 
@@ -39,6 +45,7 @@ export default function KeySettings({
     groq: initList("groq"),
     google: initList("google"),
   }));
+  const [stt, setStt] = useState<SttClientConfig>(() => getSttConfig());
 
   if (!open) return null;
 
@@ -60,6 +67,7 @@ export default function KeySettings({
 
   const save = () => {
     (Object.keys(keys) as Provider[]).forEach((p) => setKeys(p, keys[p]));
+    setSttConfig(stt);
     onClose();
   };
 
@@ -139,6 +147,59 @@ export default function KeySettings({
               </button>
             </div>
           ))}
+        </div>
+
+        <div className="mt-6 border-t border-line pt-5">
+          <label htmlFor="stt-provider" className="text-sm font-medium text-ink">
+            Speech-to-text provider
+          </label>
+          <p className="mb-2 text-xs text-faint">
+            Use Groq Whisper, or plug in your own OpenAI-compatible STT endpoint.
+          </p>
+          <select
+            id="stt-provider"
+            value={stt.provider}
+            onChange={(e) =>
+              setStt((s) => ({ ...s, provider: e.target.value as SttProviderId }))
+            }
+            className="field"
+          >
+            <option value="groq">Groq Whisper (default)</option>
+            <option value="custom">Custom (OpenAI-compatible)</option>
+          </select>
+          {stt.provider === "custom" && (
+            <div className="mt-3 space-y-2">
+              <input
+                className="field"
+                placeholder="Base URL (e.g. https://api.openai.com/v1)"
+                value={stt.baseUrl}
+                onChange={(e) => setStt((s) => ({ ...s, baseUrl: e.target.value }))}
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <input
+                className="field"
+                placeholder="Model (e.g. whisper-1)"
+                value={stt.model}
+                onChange={(e) => setStt((s) => ({ ...s, model: e.target.value }))}
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <input
+                className="field"
+                type="password"
+                placeholder="API key"
+                value={stt.key}
+                onChange={(e) => setStt((s) => ({ ...s, key: e.target.value }))}
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <p className="text-xs text-faint">
+                Audio is sent to {"{base URL}"}/audio/transcriptions. It stays in
+                this browser and is never stored on our servers.
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="mt-6 flex justify-end gap-3">

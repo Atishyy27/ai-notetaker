@@ -1,53 +1,46 @@
-import { groq, createGroq } from "@ai-sdk/groq";
 import { google, createGoogleGenerativeAI } from "@ai-sdk/google";
-import { transcribe, generateObject } from "ai";
+import { generateObject } from "ai";
 import { analysisSchema, type Analysis } from "./schema";
 import { ANALYSIS_SYSTEM_PROMPT, buildAnalysisPrompt } from "./prompts";
 import { withKeyFailover } from "./failover";
+import { getSttProvider, type SttResult } from "./stt";
 
 // The only module in the app that talks to a third-party AI provider.
 // Everything else (routes, UI) goes through these two functions, which keeps
 // the client / server / provider boundaries clean.
 //
-// Keys are bring-your-own: the caller can pass a user's keys and we fail over
-// across them. With no keys we fall back to the server's env key.
+// Transcription is pluggable: a chosen STT provider (see ./stt) does the work,
+// so a user can bring their own engine, not just their own key. Analysis stays
+// on Gemini. Keys are bring-your-own with env fallback.
 
-// Groq hosts Whisper; turbo is the fast variant and is on the free tier.
-const TRANSCRIPTION_MODEL = "whisper-large-v3-turbo";
 // Gemini 2.5 Flash: free tier, supports schema-enforced object generation.
 const ANALYSIS_MODEL = "gemini-2.5-flash";
 
-// A per-key provider instance, or the env-backed default when no key is given.
-function groqFor(apiKey?: string) {
-  return apiKey ? createGroq({ apiKey }) : groq;
-}
 function googleFor(apiKey?: string) {
   return apiKey ? createGoogleGenerativeAI({ apiKey }) : google;
 }
 
-export type TranscriptionResult = {
-  text: string;
-  durationSec: number | null;
-};
+export type TranscriptionResult = SttResult;
 
 export async function transcribeAudio(
   audio: Uint8Array,
-  opts?: { language?: string; keys?: string[] },
+  opts?: {
+    provider?: string | null;
+    language?: string;
+    keys?: string[];
+    apiKey?: string;
+    baseUrl?: string;
+    model?: string;
+  },
 ): Promise<TranscriptionResult> {
-  const result = await withKeyFailover(opts?.keys ?? [], (key) =>
-    transcribe({
-      model: groqFor(key).transcription(TRANSCRIPTION_MODEL),
-      audio,
-      providerOptions: opts?.language
-        ? { groq: { language: opts.language } }
-        : undefined,
-    }),
-  );
-
-  return {
-    text: result.text,
-    durationSec: result.durationInSeconds ?? null,
-  };
+  const provider = getSttProvider(opts?.provider);
+  return provider.transcribe(audio, {
+    keys: opts?.keys,
+    apiKey: opts?.apiKey,
+    language: opts?.language,
+    baseUrl: opts?.baseUrl,
+    model: opts?.model,
+  });
 }
 
 /**
