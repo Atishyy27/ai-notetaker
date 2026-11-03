@@ -1,4 +1,3 @@
-import { auth } from "@clerk/nextjs/server";
 import { transcribeAudio } from "@/lib/ai";
 import { mapAiError } from "@/lib/http";
 import { parseKeys } from "@/lib/failover";
@@ -19,13 +18,8 @@ const ALLOWED_TYPES = [
 const MAX_BYTES = 25 * 1024 * 1024; // 25MB
 
 export async function POST(req: Request) {
-  // Capturing requires an account — this runs the STT key, so it must not be
-  // open to anonymous callers.
-  const { userId } = await auth();
-  if (!userId) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+  // Open to guests: the public demo runs on the server's keys so anyone can try
+  // it without an account. A user's own BYOK keys are used when supplied.
   let form: FormData;
   try {
     form = await req.formData();

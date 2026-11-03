@@ -9,7 +9,7 @@ import KeySettings from "@/components/KeySettings";
 import ProcessingView from "@/components/ProcessingView";
 import Recorder from "@/components/Recorder";
 import StatusBadge from "@/components/StatusBadge";
-import { Show, SignInButton, UserButton } from "@clerk/nextjs";
+import { Show, SignInButton, UserButton, useAuth } from "@clerk/nextjs";
 import { analyzeTranscript, loadSample, transcribeAudio } from "@/lib/api";
 import type { CaptureState, SessionDTO } from "@/lib/types";
 
@@ -111,6 +111,9 @@ export default function HomePage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   // The sample is an ephemeral, read-only preview (no owner, not persisted).
   const [isSample, setIsSample] = useState(false);
+  // Guests can use the whole demo on the server keys; their results just aren't
+  // saved (so they render read-only). Signing in is what persists history.
+  const { isSignedIn } = useAuth();
 
   const processing = PROCESSING.includes(state);
   const recording = state === "recording" || state === "paused";
@@ -206,7 +209,7 @@ export default function HomePage() {
         </nav>
 
         {state === "completed" && session ? (
-          <Dashboard key={session.id} session={session} preview={isSample} />
+          <Dashboard key={session.id} session={session} preview={isSample || !isSignedIn} />
         ) : processing ? (
           <div className="mx-auto max-w-xl pt-4">
             <ProcessingView state={state} />
@@ -252,7 +255,6 @@ export default function HomePage() {
               </p>
             </div>
 
-            <Show when="signed-in">
             <ConsentGate>
               <div className="card p-4 sm:p-5">
                 <div className="segment mb-4" role="tablist" aria-label="Capture source">
@@ -293,20 +295,17 @@ export default function HomePage() {
                 Free tier: up to 25 MB per clip (~1&ndash;2 hrs recorded, ~25 min as MP3).
               </p>
             </ConsentGate>
-            </Show>
 
             <Show when="signed-out">
-              <div className="card p-6 text-center">
-                <h2 className="text-base font-semibold text-ink">Sign in to record</h2>
-                <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted">
-                  Create a free account to record, transcribe and keep your sessions in one place. Or explore the sample below &mdash; no account needed.
-                </p>
+              <p className="mt-3 text-center text-xs text-faint">
+                You&rsquo;re on the shared demo.{" "}
                 <SignInButton mode="modal">
-                  <button type="button" className="btn btn-primary mt-5 px-5 py-2.5">
-                    Sign in / Sign up
+                  <button type="button" className="font-medium text-accent hover:text-accent-hover">
+                    Sign in
                   </button>
-                </SignInButton>
-              </div>
+                </SignInButton>{" "}
+                to save your sessions to history.
+              </p>
             </Show>
 
             <div className="mt-6 text-center">
