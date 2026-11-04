@@ -4,13 +4,10 @@ import { analyzeTranscript } from "@/lib/ai";
 import { createSession } from "@/lib/db";
 import { mapAiError } from "@/lib/http";
 import { parseKeys } from "@/lib/failover";
-import { clientIp, underLimit } from "@/lib/rate-limit";
+import { clientIp, demoAllowed } from "@/lib/rate-limit";
 import type { SessionDTO } from "@/lib/types";
 
 export const maxDuration = 60;
-
-const DEMO_LIMIT = 20;
-const DEMO_WINDOW_SEC = 3600;
 
 function defaultTitle(): string {
   return `Session ${new Date().toLocaleString()}`;
@@ -44,7 +41,7 @@ export async function POST(req: Request) {
   const keys = parseKeys(req.headers.get("x-google-key"));
 
   if (keys.length === 0) {
-    const ok = await underLimit(clientIp(req), DEMO_LIMIT, DEMO_WINDOW_SEC);
+    const ok = await demoAllowed(clientIp(req));
     if (!ok) {
       return Response.json(
         { error: "Demo limit reached. Add your own free API key in Keys to keep going." },

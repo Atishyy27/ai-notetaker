@@ -17,6 +17,11 @@ export function clientIp(req: Request): string {
   return req.headers.get("x-real-ip") ?? "unknown";
 }
 
+// The demo caps on the server-key path: a burst limit per hour and a total per
+// day, both per IP. A real trial stays well under; a scripted abuser hits them.
+export const HOURLY_LIMIT = 20;
+export const DAILY_LIMIT = 60;
+
 /**
  * Returns true if this IP is still under `limit` requests in the current
  * `windowSec` bucket (and records this one). Fails open: if there is no DB or the
@@ -41,4 +46,13 @@ export async function underLimit(
   } catch {
     return true;
   }
+}
+
+/**
+ * The server-key demo gate: under both the hourly burst cap and the daily total.
+ * Checks hourly first so a blocked caller doesn't also spend a daily slot.
+ */
+export async function demoAllowed(ip: string): Promise<boolean> {
+  if (!(await underLimit(ip, HOURLY_LIMIT, 3600))) return false;
+  return underLimit(ip, DAILY_LIMIT, 86400);
 }

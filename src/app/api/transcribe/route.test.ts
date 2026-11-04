@@ -7,16 +7,19 @@ vi.mock("@/lib/ai", () => ({
   transcribeAudio: vi.fn(),
 }));
 
-// Transcribe now requires a signed-in user; these tests exercise the signed-in
-// path, so auth() is stubbed to return a user id.
-vi.mock("@clerk/nextjs/server", () => ({
-  auth: vi.fn(async () => ({ userId: "test_user" })),
+// The demo rate limiter talks to Postgres; stub it so the route's own branches
+// (allowed vs over the cap) are what's under test, not the DB.
+vi.mock("@/lib/rate-limit", () => ({
+  demoAllowed: vi.fn(async () => true),
+  clientIp: () => "test-ip",
 }));
 
 import { POST } from "./route";
 import { transcribeAudio } from "@/lib/ai";
+import { demoAllowed } from "@/lib/rate-limit";
 
 const mocked = vi.mocked(transcribeAudio);
+const mockedLimit = vi.mocked(demoAllowed);
 
 function reqWith(form: FormData) {
   return new Request("http://localhost/api/transcribe", {
@@ -27,6 +30,7 @@ function reqWith(form: FormData) {
 
 beforeEach(() => {
   mocked.mockReset();
+  mockedLimit.mockResolvedValue(true);
 });
 
 describe("POST /api/transcribe validation", () => {
@@ -92,5 +96,16 @@ describe("POST /api/transcribe provider path", () => {
     form.set("audio", new File(["x"], "clip.webm", { type: "audio/webm" }));
     const res = await POST(reqWith(form));
     expect(res.status).toBe(429);
+  });
+});
+
+describe("POST /api/transcribe demo cap", () => {
+  it("429s and never calls the provider when over the demo limit", async () => {
+    mockedLimit.mockResolvedValueOnce(false);
+    const form = new FormData();
+    form.set("audio", new File(["x"], "clip.webm", { type: "audio/webm" }));
+    const res = await POST(reqWith(form));
+    expect(res.status).toBe(429);
+    expect(mocked).not.toHaveBeenCalled();
   });
 });
