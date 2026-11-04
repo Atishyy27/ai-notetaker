@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { updateActionItem, deleteActionItem } from "@/lib/db";
 import { PRIORITIES } from "@/lib/schema";
+import { getGraphStore } from "@/lib/promises";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -47,6 +48,15 @@ export async function PATCH(req: Request, { params }: Ctx) {
   const item = await updateActionItem(id, patch, userId);
   if (!item) {
     return Response.json({ error: "Action item not found." }, { status: 404 });
+  }
+  // Keep the promise graph in sync: marking a task done closes the commitment it
+  // follows up across meetings. Best-effort.
+  if (patch.done !== undefined) {
+    try {
+      await getGraphStore().setDone(id, patch.done);
+    } catch {
+      // promise tracking is additive
+    }
   }
   return Response.json(item);
 }

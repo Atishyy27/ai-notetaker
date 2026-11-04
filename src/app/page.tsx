@@ -189,6 +189,7 @@ export default function HomePage() {
           <div className="flex items-center gap-2 sm:gap-3">
             <StatusBadge state={state} />
             <Link href="/sessions" className="btn btn-ghost px-2 py-1.5">History</Link>
+            <Link href="/promises" className="btn btn-ghost px-2 py-1.5">Promises</Link>
             <button type="button" onClick={() => setSettingsOpen(true)} className="btn btn-ghost px-2 py-1.5">
               Keys
             </button>

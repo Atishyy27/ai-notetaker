@@ -5,6 +5,7 @@ import { createSession } from "@/lib/db";
 import { mapAiError } from "@/lib/http";
 import { parseKeys } from "@/lib/failover";
 import { clientIp, demoAllowed } from "@/lib/rate-limit";
+import { getGraphStore, recordMeetingPromises } from "@/lib/promises";
 import type { SessionDTO } from "@/lib/types";
 
 export const maxDuration = 60;
@@ -75,6 +76,21 @@ export async function POST(req: Request) {
       { title, transcript, summary: analysis.summary, durationSec, actionItems },
       userId,
     );
+    // Record owned commitments into the promise graph (the USP). Best-effort: a
+    // failure here must never break capture.
+    try {
+      await recordMeetingPromises(getGraphStore(), {
+        meetingId: session.id,
+        meetingTitle: session.title,
+        createdAt: session.createdAt,
+        userId,
+        promises: session.actionItems
+          .filter((a) => a.assignee && a.assignee !== "Unassigned")
+          .map((a) => ({ actionId: a.id, text: a.task, owner: a.assignee, done: a.done })),
+      });
+    } catch {
+      // promise tracking is additive; leave the session intact
+    }
     return Response.json(session, { status: 201 });
   }
 

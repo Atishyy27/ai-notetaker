@@ -51,4 +51,23 @@ await sql`
     PRIMARY KEY (ip, window_start)
   )`;
 
-console.log("schema ready: sessions, action_items, request_counts");
+// The promise graph (MOCK, flat-table stand-in for AuraDB). follows_up is the
+// cross-meeting edge; source_action_id ties a promise to the action item it came
+// from so toggling that item done later closes the promise.
+await sql`
+  CREATE TABLE IF NOT EXISTS promises (
+    id uuid PRIMARY KEY,
+    user_id text NOT NULL,
+    meeting_id uuid NOT NULL,
+    meeting_title text NOT NULL,
+    owner text NOT NULL,
+    text text NOT NULL,
+    done boolean NOT NULL DEFAULT false,
+    created_at text NOT NULL,
+    follows_up uuid,
+    source_action_id uuid NOT NULL
+  )`;
+await sql`CREATE INDEX IF NOT EXISTS promises_user_idx ON promises (user_id)`;
+await sql`CREATE INDEX IF NOT EXISTS promises_action_idx ON promises (source_action_id)`;
+
+console.log("schema ready: sessions, action_items, request_counts, promises");
