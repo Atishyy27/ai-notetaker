@@ -1,103 +1,79 @@
-# Baithak · बैठक
+# baithak · बैठक
 
-Record or upload a conversation, get back a reliable transcript, an executive summary grouped by topic, and a structured, editable list of action items. Sessions are saved and can be revisited.
+A voice-AI meeting notetaker. Record your mic, capture a meeting tab, or upload
+audio, and get a clean transcript, a topic-wise summary, and action items grouped
+by the person who owns them. Its differentiator is **cross-meeting promise
+tracking**: what was committed to, and whether it was kept, across meetings.
+
+**Live:** https://baithak-teal.vercel.app — open and try it, no signup needed.
+
+## What it does
+
+- **Capture** three ways: microphone, a shared meeting tab's audio, or an uploaded file.
+- **Transcribe** with Groq Whisper, then **summarise** by topic and extract
+  **action items** with an owner, due date and priority.
+- **Mail deliverables**: each person can be sent just their own tasks.
+- **Accounts** (Clerk): sessions are private per user. The public demo runs on the
+  server's keys with no account; signing in saves your history.
+- **Bring your own key, or your own provider**: enter your Groq/Gemini keys, or
+  point speech-to-text at your own OpenAI-compatible STT endpoint.
+- **Cross-meeting promise tracking** (the USP): owned action items become promises
+  tracked across meetings and shown open or kept. See
+  [`docs/usp-promise-tracking.md`](docs/usp-promise-tracking.md).
+
+## Architecture
+
+```
+client (browser)            server (Next API routes)         providers
+------------------------    --------------------------       --------------------
+Recorder / AudioUpload  ->  POST /api/transcribe        ->   STT adapter (Groq / custom)
+                            POST /api/analyze           ->   Gemini  +  promise graph
+Dashboard / Insights   <->  /api/sessions, /api/actions ->   Neon Postgres (lib/db.ts)
+Promises page          <->  /api/promises               ->   graph store (lib/promises)
+```
+
+Provider work is isolated behind seams so a real service swaps in by env var with
+no code change. These are **mocks today**, clearly labeled:
+
+| Capability | Flag | Mock now | Real later |
+|---|---|---|---|
+| Promise graph | `NEO4J_URI` | Postgres flat tables | Neo4j / AuraDB |
+| Diarization | `SARVAM_API_KEY` | positional | Sarvam Saaras |
+| Audio storage | `S3_ENDPOINT` | no-op | R2 / B2 / S3 |
+
+## Stack
+
+Next.js 16 (App Router), React 19, TypeScript, Tailwind v4, Clerk, Neon Postgres,
+Groq Whisper, Google Gemini, Vitest, deployed on Vercel.
+
+## Local setup
+
+```bash
+npm install
+# Provide env vars (see the table in DEPLOY.md): DATABASE_URL, Clerk keys,
+# GROQ_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY. Keys are optional for the sample.
+node --env-file=.env.local scripts/init-db.mjs   # create the schema
+npm run dev
+```
+
+## Checks
+
+```bash
+npm run lint
+npx tsc --noEmit
+npm test -- --run
+npm run build
+```
+
+Tests cover the API routes (validation, the demo cap, guest vs signed-in paths)
+and the promise-tracking logic (a promise made in one meeting, kept in the next).
+
+## Deploy
+
+Vercel, from `main`. The production checklist, including the owner-only steps
+(Clerk production keys), is in [`DEPLOY.md`](DEPLOY.md).
 
 ## Todo
 
 - [ ] Rotate the Clerk test secret and move to production keys before a public launch, then update `CLERK_SECRET_KEY` in the deploy env.
-
-## Architecture
-
-Three clean boundaries, one per concern:
-
-```
-client (browser)            server (Next API routes)         third-party AI
---------------------        ------------------------         --------------------
-Recorder / AudioUpload  ->  POST /api/transcribe        ->   Groq (Whisper)
-                            POST /api/analyze           ->   Google (Gemini)
-Dashboard / Insights   <->  /api/sessions, /api/actions ->   JSON store (lib/db.ts)
-```
-
-- **Only `src/lib/ai.ts` talks to an AI provider.** Routes call it; the UI never touches a provider.
-- **The LLM output is schema-enforced.** `src/lib/schema.ts` is a Zod schema handed to the AI SDK's `generateObject`, so the model is constrained to our exact shape. There is no `JSON.parse` of a free-text reply anywhere, which is what prevents hallucinated formats and truncation.
-- **Types are end-to-end.** Zod on the model boundary, a typed store in `src/lib/db.ts`, shared DTOs in `src/lib/types.ts`.
-- **The store is concurrency-safe.** Every mutation runs inside a serialised critical section, so two in-flight requests can't clobber each other (no lost updates), and writes are atomic (temp file + rename), so a crash mid-write can never leave a corrupt file. See the concurrency tests in `src/lib/db.test.ts`.
-
-## Stack and why
-
-| Choice | Why |
-|---|---|
-| Next.js (App Router) + TypeScript | One repo, API routes as the backend, strict typing throughout. |
-| Groq `whisper-large-v3-turbo` | Hosted Whisper, fast, free tier. |
-| Google `gemini-2.5-flash` | Strong structured output, free tier. |
-| Vercel AI SDK (`transcribe`, `generateObject`) | Provider-agnostic, and `generateObject` enforces the Zod schema. |
-| JSON file store (`lib/db.ts`) | Zero-setup, zero-dependency persistence. Serialised writes + atomic rename, abstracted behind one module so Postgres is a drop-in later. |
-| Vitest | Fast unit + route tests, no extra runtime config. |
-
-## Setup
-
-```bash
-npm install
-cp .env.example .env.local   # then fill in the two keys (both free)
-npm run dev
-```
-
-Sessions are saved to `data/sessions.json` (created on first use, git-ignored).
-
-Keys (free tier):
-- `GROQ_API_KEY` — https://console.groq.com/keys
-- `GOOGLE_GENERATIVE_AI_API_KEY` — https://aistudio.google.com/apikey
-
-Without keys the API routes return a clear error; everything else (UI, history) still runs.
-
-## Key trade-off: REST vs streaming
-
-Audio is recorded in the browser and the whole blob is sent on **Stop** over REST (`multipart/form-data`), not streamed over WebSockets.
-
-- **Why:** far fewer failure modes. One request, one response; no chunk reassembly, no socket lifecycle, no partial-transcript merging. For meeting-length clips the latency difference is small, and the reliability and code clarity are worth more here.
-- **When streaming wins:** live captions during a long call. That is the first thing listed under "what's next."
-
-## Resilience
-
-Each graded failure mode has a handled path:
-
-- Mic permission denied / no device -> caught in `Recorder`, inline message, no crash.
-- Oversized or wrong-type audio -> rejected client-side and again in `/api/transcribe` (413 / 415).
-- Empty audio or no speech -> 400 / 422 with a message.
-- Provider rate limit -> 429 with a wait-and-retry message (`src/lib/http.ts`).
-- Malformed LLM output -> cannot occur (schema-enforced), plus one retry in `analyzeTranscript`.
-
-## API
-
-| Route | Does |
-|---|---|
-| `POST /api/transcribe` | audio file -> `{ text, durationSec }` |
-| `POST /api/analyze` | `{ transcript }` -> runs analysis, saves the session, returns it |
-| `GET /api/sessions` | history list |
-| `GET /api/sessions/:id` | one session with its action items |
-| `POST /api/sessions/:id/actions` | add an action item manually |
-| `PATCH /api/actions/:id` | toggle done / edit / reassign / reprioritise |
-| `DELETE /api/actions/:id` | remove an action item |
-
-## Tests
-
-```bash
-npm test          # vitest run
-npm run typecheck # tsc --noEmit
-npm run lint
-```
-
-- `schema.test.ts` — the model contract: valid shapes parse, bad priority / empty task / wrong types are rejected.
-- `db.test.ts` — store CRUD plus two concurrency tests that would fail a naive read-modify-write: N parallel writes all land, and the file stays valid JSON under load.
-- `http.test.ts` — each provider failure class maps to the right status.
-- `api/transcribe/route.test.ts` — route validation (400 / 413 / 415 / 422) and the success / rate-limit paths, with the provider mocked.
-
-CI (`.github/workflows/ci.yml`) runs lint, typecheck, test and build on every push and PR.
-
-## Known limitations and what I would build next
-
-- **No live streaming** — transcription happens after Stop. Next: WebSocket streaming for live captions.
-- **No speaker diarization** — the transcript is not split by speaker. Groq returns segments; diarization would need a model that labels speakers.
-- **Single user, no auth** — one local store, no accounts. Next: auth + per-user sessions, then shared team workspaces with real assignees.
-- **Single-instance store** — the JSON store is correct for one running instance; horizontal scaling needs the Postgres swap the store module is built for.
-- **Nice-to-haves** — export (PDF/markdown) of a session and calendar/Slack push for action items.
+- [ ] Swap the mock graph / diarization / audio adapters for the real services (add the keys above).
