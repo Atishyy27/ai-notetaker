@@ -42,4 +42,13 @@ await sql`
   CREATE INDEX IF NOT EXISTS action_items_session_seq_idx
   ON action_items (session_id, seq)`;
 
-console.log("schema ready: sessions, action_items");
+// Per-IP demo rate limiting (fixed window). Only the server-key path writes here.
+await sql`
+  CREATE TABLE IF NOT EXISTS request_counts (
+    ip text NOT NULL,
+    window_start bigint NOT NULL,
+    count integer NOT NULL DEFAULT 1,
+    PRIMARY KEY (ip, window_start)
+  )`;
+
+console.log("schema ready: sessions, action_items, request_counts");

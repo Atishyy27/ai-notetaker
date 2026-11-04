@@ -1,6 +1,12 @@
 import { transcribeAudio } from "@/lib/ai";
 import { mapAiError } from "@/lib/http";
 import { parseKeys } from "@/lib/failover";
+import { clientIp, underLimit } from "@/lib/rate-limit";
+
+// Demo cap for the server-key path, per IP per hour. Generous for a real trial,
+// tight enough that the public can't drain the keys. BYOK callers skip it.
+const DEMO_LIMIT = 20;
+const DEMO_WINDOW_SEC = 3600;
 
 // Transcription can take a while for longer clips.
 export const maxDuration = 60;
@@ -52,6 +58,17 @@ export async function POST(req: Request) {
   const baseUrl = req.headers.get("x-stt-base-url") || undefined;
   const model = req.headers.get("x-stt-model") || undefined;
   const apiKey = req.headers.get("x-stt-key") || undefined;
+
+  // Only the server-key demo path is capped; a caller on their own key is not.
+  if (keys.length === 0 && !apiKey) {
+    const ok = await underLimit(clientIp(req), DEMO_LIMIT, DEMO_WINDOW_SEC);
+    if (!ok) {
+      return Response.json(
+        { error: "Demo limit reached. Add your own free API key in Keys to keep going." },
+        { status: 429 },
+      );
+    }
+  }
 
   try {
     const bytes = new Uint8Array(await file.arrayBuffer());
