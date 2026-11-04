@@ -2,6 +2,10 @@
 
 Record or upload a conversation, get back a reliable transcript, an executive summary grouped by topic, and a structured, editable list of action items. Sessions are saved and can be revisited.
 
+## Todo
+
+- [ ] Rotate the Clerk test secret and move to production keys before a public launch, then update `CLERK_SECRET_KEY` in the deploy env.
+
 ## Architecture
 
 Three clean boundaries, one per concern:
